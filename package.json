@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx --watch --env-file .env src/index.ts",
-    "start": "node --env-file .env dist/index.js",
+    "start": "node --env-file .env dist/src/index.js",
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest",
     "test:run": "vitest --run",
@@ -39,11 +39,15 @@
   },
   "homepage": "https://github.com/FelipeZNascimento/nodejs-boilerplate#readme",
   "dependencies": {
-    "express": "^5.1.0"
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "mysql2": "^3.14.3",
+    "node-cache": "^5.1.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.34.0",
     "@tsconfig/node22": "^22.0.2",
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/node": "^24.3.0",
     "@vitest/coverage-v8": "^3.2.4",
