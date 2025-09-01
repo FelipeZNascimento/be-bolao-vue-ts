@@ -7,6 +7,7 @@ const router = express.Router();
 const matchService = new MatchService();
 const matchController = new MatchController(matchService);
 
+router.get("/", matchController.getBySeasonWeek);
 router.get("/:season/:week", matchController.getBySeasonWeek);
 
 export default router;

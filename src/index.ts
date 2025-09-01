@@ -1,6 +1,7 @@
-import initRoutes from "#init/init.routes.ts";
+import betRoutes from "#bet/bet.routes.ts";
 import matchRoutes from "#match/match.routes.ts";
 import { cache, middleware } from "#middlewares/middlewares.ts";
+import rankingRoutes from "#ranking/ranking.routes.ts";
 import teamRoutes from "#team/team.routes.ts";
 import cors from "cors";
 import express from "express";
@@ -25,10 +26,10 @@ const corsOptions = {
   // headers: 'Content-Type, Authorization, Content-Length, X-Requested-With',
 };
 
-// app.use("/bolaonfl/initialize", initializeRoutes);
+app.use("/bolaonfl/bet", betRoutes);
+app.use("/bolaonfl/ranking", rankingRoutes);
 app.use("/bolaonfl/match", matchRoutes);
 app.use("/bolaonfl/team", cache(), teamRoutes);
-app.use("/bolaonfl/init", cache(), initRoutes);
 app.use(cors(corsOptions));
 app.use(express.json()); // To parse data into json
 
