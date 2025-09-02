@@ -193,3 +193,7 @@ const calculateExtrasReward = (user: IUser, extras: IExtraBet[], extrasResults: 
 
   return extraBetsPoints;
 };
+
+export const calculateMaxPoints = (season: number, matches: IMatch[]): number => {
+  return matches.reduce((acumulator: number, match: IMatch) => acumulator + maxPointsPerBet.season(season, match.week), 0);
+};

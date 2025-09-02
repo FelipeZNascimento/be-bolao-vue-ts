@@ -1,5 +1,4 @@
 import { BetService } from "#bet/bet.service.ts";
-import { maxPointsPerBet } from "#bet/bet.utils.ts";
 import { IMatch, MatchService } from "#match/match.service.ts";
 import { RankingService } from "#ranking/ranking.service.ts";
 import { BaseController } from "#shared/base.controller.ts";
@@ -10,7 +9,7 @@ import { UserService } from "#user/user.service.ts";
 import { NextFunction, Request, Response } from "express";
 
 import { IRankingLine } from "./ranking.types.ts";
-import { buildSeasonUserRanking } from "./ranking.utils.ts";
+import { buildSeasonUserRanking, calculateMaxPoints } from "./ranking.utils.ts";
 
 export class RankingController extends BaseController {
   constructor(
@@ -53,10 +52,7 @@ export class RankingController extends BaseController {
       const extras = isFulfilled(extrasResponse) ? extrasResponse.value : [];
       const extrasResults = isFulfilled(extrasResultsResponse) ? extrasResultsResponse.value : null;
 
-      const totalPossiblePoints: number = startedMatches.reduce(
-        (acumulator: number, match: IMatch) => acumulator + maxPointsPerBet.season(parseInt(season), match.week),
-        0,
-      );
+      const totalPossiblePoints: number = calculateMaxPoints(parseInt(season), startedMatches);
 
       const matchIds = startedMatches.map((match) => match.id);
       const bets = await this.betService.getByMatchIds(matchIds, parseInt(season));
