@@ -19,7 +19,7 @@ export const buildSeasonUserRanking = (
       const extrasReward = calculateExtrasReward(user, extras, extrasResults);
       const rankingLine = calculateUserPoints(user, matches, bets, totalPossiblePoints);
 
-      rankingLine.score.total += extrasReward;
+      rankingLine.score.total += extrasReward + 2;
       rankingLine.score.extras = extrasReward;
 
       return rankingLine;
