@@ -55,12 +55,22 @@ export class BetService {
   }
 
   async getExtrasResults(season: number, seasonStart: number) {
-    return (await db.query(
+    const [row] = (await db.query(
       `SELECT SQL_NO_CACHE id_season as idSeason, json
         FROM extra_bets_results_new
         WHERE id_season = ?
         AND UNIX_TIMESTAMP() >= ?`,
       [season, seasonStart],
     )) as IExtraBet[];
+
+    return row;
+
+    // return (await db.query(
+    //   `SELECT SQL_NO_CACHE id_season as idSeason, json
+    //     FROM extra_bets_results_new
+    //     WHERE id_season = ?
+    //     AND UNIX_TIMESTAMP() >= ?`,
+    //   [season, seasonStart],
+    // )) as IExtraBet[];
   }
 }

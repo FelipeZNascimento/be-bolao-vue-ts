@@ -1,4 +1,5 @@
 import db from "#database/db.ts";
+import { CACHE_KEYS, cachedInfo } from "#utils/dataCache.ts";
 
 export interface ITeam {
   alias: string;
@@ -13,6 +14,14 @@ export interface ITeam {
 
 export class TeamService {
   async getAll() {
-    return (await db.query(`SELECT SQL_NO_CACHE * FROM teams`, [])) as ITeam[];
+    const cachedTeams: ITeam[] = cachedInfo.get(CACHE_KEYS.TEAMS) ?? [];
+
+    if (cachedTeams.length > 0) {
+      return cachedTeams;
+    }
+
+    const rows: ITeam[] = (await db.query(`SELECT SQL_NO_CACHE * FROM teams`, [])) as ITeam[];
+    cachedInfo.set(CACHE_KEYS.TEAMS, rows);
+    return rows;
   }
 }

@@ -20,9 +20,9 @@ export interface IMatch extends RowDataPacket {
   week: number;
 }
 
-interface ICount extends RowDataPacket {
-  count: number;
-}
+// interface ICount extends RowDataPacket {
+//   count: number;
+// }
 
 interface IWeek extends RowDataPacket {
   week: number;
@@ -72,15 +72,28 @@ export class MatchService {
     return row.week;
   }
 
-  async getStartedMatches(season: number) {
-    const [row] = (await db.query(
-      `SELECT COUNT(*) as count
+  async getStartedMatchesBySeason(season: number) {
+    return (await db.query(
+      `SELECT SQL_NO_CACHE matches.id, matches.timestamp, matches.week, matches.id_season as season, matches.status, matches.possession,
+        matches.away_points as awayScore, matches.home_points as homeScore, matches.clock, matches.overUnder, matches.homeTeamOdds,
+        matches.id_home_team as idHomeTeam, matches.id_away_team as idAwayTeam
         FROM matches
-        WHERE matches.status != 0
-        AND id_season = ?`,
+        WHERE matches.id_season = ?
+        AND matches.status != 0
+        ORDER BY matches.timestamp ASC`,
       [season],
-    )) as ICount[];
-
-    return row.count;
+    )) as IMatch[];
   }
+
+  // async getStartedMatchesCount(season: number) {
+  //   const [row] = (await db.query(
+  //     `SELECT COUNT(*) as count
+  //       FROM matches
+  //       WHERE matches.status != 0
+  //       AND id_season = ?`,
+  //     [season],
+  //   )) as ICount[];
+
+  //   return row.count;
+  // }
 }

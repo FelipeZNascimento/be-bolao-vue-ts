@@ -6,6 +6,7 @@ export interface IUser {
   fullName: string;
   icon: string;
   id: number;
+  isOnline: boolean;
   name: string;
   position: number;
   seasonId: number;

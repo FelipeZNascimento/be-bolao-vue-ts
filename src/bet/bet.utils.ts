@@ -68,7 +68,7 @@ export const EXTRA_BETS_MAPPING = {
   },
 };
 
-const seasonMaxPoints = (season: number, week: number) => {
+const seasonMaxPoints = (season: number, week: number): number => {
   if (season >= 1 && season <= 8) {
     if (week >= 0 && week <= 17) {
       return 10;
@@ -79,17 +79,19 @@ const seasonMaxPoints = (season: number, week: number) => {
     } else if (week === 21) {
       return 80;
     }
-  } else if (season >= 9) {
+  } else {
     if (week >= 0 && week <= 18) {
       return 10;
     } else if (week === 19 || week === 20) {
       return 20;
     } else if (week === 21) {
       return 40;
-    } else if (week === 22) {
+    } else {
       return 80;
     }
   }
+
+  return 0;
 };
 
 const extraPointsMapping = (extraType: number) => {
@@ -117,6 +119,8 @@ const extraPointsMapping = (extraType: number) => {
   if (extraType === EXTRA_BETS_MAPPING.AFC_WILDCARD.TYPE || extraType === EXTRA_BETS_MAPPING.NFC_WILDCARD.TYPE) {
     return EXTRA_BETS_MAPPING.AFC_WILDCARD.POINTS;
   }
+
+  return 0;
 };
 
 export const maxPointsPerBet = {

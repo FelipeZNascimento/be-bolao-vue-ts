@@ -1,4 +1,5 @@
 import { BetService } from "#bet/bet.service.ts";
+import { maxPointsPerBet } from "#bet/bet.utils.ts";
 import { IMatch, MatchService } from "#match/match.service.ts";
 import { RankingService } from "#ranking/ranking.service.ts";
 import { BaseController } from "#shared/base.controller.ts";
@@ -6,10 +7,10 @@ import { ErrorCode } from "#shared/errorCodes.ts";
 import { ErrorHandler } from "#shared/errorHandler.ts";
 import { ITeam, TeamService } from "#team/team.service.ts";
 import { UserService } from "#user/user.service.ts";
-import { CACHE_KEYS, cachedInfo } from "#utils/dataCache.ts";
 import { NextFunction, Request, Response } from "express";
 
-import { buildUsersObject } from "./ranking.utils.ts";
+import { IRankingLine } from "./ranking.types.ts";
+import { buildSeasonUserRanking } from "./ranking.utils.ts";
 
 export class RankingController extends BaseController {
   constructor(
@@ -24,23 +25,17 @@ export class RankingController extends BaseController {
 
   getSeason = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      let teams: ITeam[] | undefined = cachedInfo.get(CACHE_KEYS.TEAMS);
       const season = req.params.season || process.env.SEASON;
       const seasonStart = process.env.SEASON_START;
 
       if (!season || !seasonStart) {
         throw new ErrorHandler("Missing required field", 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
-      if (!teams) {
-        teams = await this.teamService.getAll();
-        cachedInfo.set(CACHE_KEYS.TEAMS, teams);
-      }
+      const teams = await this.teamService.getAll();
 
-      // const [userResponse, matchResponse, startedMatchesResponse, extrasResponse, extrasResults] = await Promise.allSettled([
-      const [userResponse, matchResponse, startedMatchesResponse] = await Promise.allSettled([
+      const [userResponse, startedMatchesResponse, extrasResponse, extrasResultsResponse] = await Promise.allSettled([
         this.userService.getBySeason(parseInt(season)),
-        this.matchService.getBySeason(parseInt(season)),
-        this.matchService.getStartedMatches(parseInt(season)),
+        this.matchService.getStartedMatchesBySeason(parseInt(season)),
         this.betService.getExtras(parseInt(season), parseInt(seasonStart)),
         this.betService.getExtrasResults(parseInt(season), parseInt(seasonStart)),
       ]);
@@ -48,21 +43,35 @@ export class RankingController extends BaseController {
       const isRejected = (input: PromiseSettledResult<unknown>): input is PromiseRejectedResult => input.status === "rejected";
       const isFulfilled = <T>(p: PromiseSettledResult<T>): p is PromiseFulfilledResult<T> => p.status === "fulfilled";
 
-      if (isRejected(userResponse) || isRejected(matchResponse)) {
+      if (isRejected(userResponse) || isRejected(startedMatchesResponse)) {
         throw new ErrorHandler("Database unreachable", 204, ErrorCode.DB_ERROR);
       }
 
       const users = isFulfilled(userResponse) ? userResponse.value : [];
-      const matches = isFulfilled(matchResponse) ? this.mergeTeamsIntoMatches(matchResponse.value, teams) : [];
-      const startedMatches = isFulfilled(startedMatchesResponse) ? startedMatchesResponse.value : [];
+      const startedMatches = isFulfilled(startedMatchesResponse) ? this.mergeTeamsIntoMatches(startedMatchesResponse.value, teams) : [];
+      const startedMatchesCount = startedMatches.length;
+      const extras = isFulfilled(extrasResponse) ? extrasResponse.value : [];
+      const extrasResults = isFulfilled(extrasResultsResponse) ? extrasResultsResponse.value : null;
 
-      const matchIds = matches.map((match) => match.id);
+      const totalPossiblePoints: number = startedMatches.reduce(
+        (acumulator: number, match: IMatch) => acumulator + maxPointsPerBet.season(parseInt(season), match.week),
+        0,
+      );
 
+      const matchIds = startedMatches.map((match) => match.id);
       const bets = await this.betService.getByMatchIds(matchIds, parseInt(season));
 
-      const usersObject = buildUsersObject(users, matches, bets, true);
+      // const weeklyRanking: {
+      //   ranking: IRankingLine[];
+      //   week: number;
+      // } = {
+      //   ranking: [],
+      //   week: 0,
+      // };
 
-      return { matches, startedMatches, users, usersObject };
+      const ranking: IRankingLine[] = buildSeasonUserRanking(users, startedMatches, bets, extras, extrasResults, totalPossiblePoints);
+
+      return { ranking: ranking, startedMatches, startedMatchesCount, users };
     });
   };
 
