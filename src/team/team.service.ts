@@ -1,16 +1,7 @@
 import db from "#database/db.ts";
 import { CACHE_KEYS, cachedInfo } from "#utils/dataCache.ts";
 
-export interface ITeam {
-  alias: string;
-  background: string;
-  code: string;
-  conference: string;
-  division: string;
-  foreground: string;
-  id: number;
-  name: string;
-}
+import { ITeam } from "./team.types.ts";
 
 export class TeamService {
   async getAll() {

@@ -1,3 +1,5 @@
+import { ITeam } from "#team/team.types.ts";
+
 /* eslint-disable perfectionist/sort-objects */
 const SUPERBOWL_WINNER_POINTS = 100;
 const CONFERENCE_CHAMPION_POINTS = 50;
@@ -126,4 +128,23 @@ const extraPointsMapping = (extraType: number) => {
 export const maxPointsPerBet = {
   extra: extraPointsMapping,
   season: seasonMaxPoints,
+};
+
+export const processExtraBets = (extraBetsJson: string, teams: ITeam[]) => {
+  const parsed = JSON.parse(extraBetsJson) as { teamId: number | number[]; type: string };
+
+  return Object.entries(parsed).map(([key, value]) => {
+    const teamsArray: ITeam[] = [];
+    if (Array.isArray(value)) {
+      const foundTeams = value.map((id) => teams.find((element) => element.id === id)).filter((el) => el !== undefined);
+      teamsArray.push(...foundTeams);
+    } else {
+      const foundTeam = teams.find((element) => element.id === value);
+      if (foundTeam) {
+        teamsArray.push(foundTeam);
+      }
+    }
+
+    return { teams: teamsArray, type: parseInt(key) };
+  });
 };

@@ -1,0 +1,7 @@
+### FETCH RANKING CURRENT SEASON
+GET http://localhost:63768/bolaonfl/ranking/season/
+content-type: application/json
+
+### FETCH RANKING 
+GET http://localhost:63768/bolaonfl/ranking/season/12
+content-type: application/json

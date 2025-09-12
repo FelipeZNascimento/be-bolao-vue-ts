@@ -1,5 +1,6 @@
 {
   "extends": "@tsconfig/node22/tsconfig.json",
+  // "typeRoots": ["./src/shared", "./node_modules/@types"],
   "compilerOptions": {
     "target": "ES2022",
     "module": "Node16",

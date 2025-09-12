@@ -1,0 +1,72 @@
+### LIST ALL USERS
+GET http://localhost:3000/bolaonfl/user/
+content-type: application/json
+
+### LIST ALL USERS
+GET http://localhost:3000/bolaonfl/user/activeProfile
+content-type: application/json
+
+### LIST SPECIFIC USER
+
+GET http://localhost:3000/bolaonfl/user/4
+content-type: application/json
+
+### LOGOUT
+
+GET http://localhost:3000/bolaonfl/user/logout
+content-type: application/json
+
+### LOGIN
+
+POST http://localhost:3000/bolaonfl/user/login
+content-type: application/json
+
+{
+    "login": "sharpion.k@gmail.com",
+    "password": "ca624d21e6c18550aa5983708afcb7cc58cc1c62"
+}
+
+### REGISTER
+
+POST http://localhost:3000/bolaonfl/user/register
+content-type: application/json
+
+{
+    "email": "sharpiona.k@gmail.com",
+    "password": "ca624d21e6c18550aa5983708afcb7cc58cc1c62",
+    "fullName": "Teste",
+    "name": "Teste",
+    "icon": "pa pa",
+    "color": "#000000"
+}
+
+### UPDATE PROFILE
+
+POST http://localhost:3000/bolaonfl/user/profile
+content-type: application/json
+
+{
+    "email": "sharpion.k@gmail.com",
+    "username": "Felipe",
+    "name": "Felipe Zanon"
+}
+
+### UPDATE PREFERENCES
+
+POST http://localhost:3000/bolaonfl/user/preferences
+content-type: application/json
+
+{
+    "color": "#FFFFFF",
+    "icon": "pa pa"
+}
+
+### UPDATE PASSWORD
+
+POST http://localhost:3000/bolaonfl/user/password
+content-type: application/json
+
+{
+    "currentPassword": "ca624d21e6c18550aa5983708afcb7cc58cc1c62",
+    "newPassword": "ca624d21e6c18550aa5983708afcb7cc58cc1c62"
+}

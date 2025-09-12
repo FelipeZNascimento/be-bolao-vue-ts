@@ -9,7 +9,6 @@ import { RankingService } from "./ranking.service.ts";
 
 const router = express.Router();
 
-// const betService = new BetService();
 const userService = new UserService();
 const rankingService = new RankingService();
 const matchService = new MatchService();

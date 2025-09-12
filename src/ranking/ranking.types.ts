@@ -1,10 +1,10 @@
-import { IUser } from "#user/user.service.ts";
+import { IUser } from "#user/user.types.ts";
 
 export interface IRankingLine {
   betsCount: number;
   matchesCount: number;
   score: IRankingScore;
-  user: Pick<IUser, "color" | "icon" | "id" | "isOnline" | "name">;
+  user: Pick<IUser, "color" | "icon" | "id" | "isOnline" | "name" | "position">;
 }
 
 export interface IRankingScore {

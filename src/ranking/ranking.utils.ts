@@ -1,11 +1,69 @@
-import { IBet, IExtraBet } from "#bet/bet.service.ts";
+import { IBet, IExtraBet } from "#bet/bet.types.ts";
 import { BET_VALUES, BetsValues, EXTRA_BETS_MAPPING, maxPointsPerBet } from "#bet/bet.utils.ts";
-import { IMatch } from "#match/match.service.ts";
-import { IUser } from "#user/user.service.ts";
+import { IMatch } from "#match/match.types.ts";
+import { isMatchEnded } from "#match/match.utils.ts";
+import { IUser } from "#user/user.types.ts";
 
 import { IRankingLine, IRawExtras } from "./ranking.types.ts";
+/**
+ * buildWeeklyUserRanking - Builds the weekly ranking.
+ *
+ * @users: All users to include in the ranking.
+ * @matches: The set of matches to calculate the points from.
+ * @bets: The bets placed by the users.
+ * @totalPossiblePoints: The total possible points a user could have achieved in that set of matches.
+ *
+ * @return: The ranking line for all users.
+ */
+export const buildWeeklyUserRanking = (
+  users: IUser[],
+  matches: IMatch[],
+  bets: IBet[],
+  totalPossiblePoints: number,
+) => {
+  const ranking = users
+    .map((user) => {
+      const rankingLine = calculateUserPoints(user, matches, bets, totalPossiblePoints);
 
-// export const buildUsersObject = (users: IUser[], matches: IMatch[], bets: IBet[], isSeasonRanking: boolean, extraBetsResults: IExtraBet[]) => {
+      return rankingLine;
+    })
+    .sort(
+      (a, b) =>
+        b.score.total - a.score.total || b.score.bullseye - a.score.bullseye || a.user.name.localeCompare(b.user.name),
+    );
+
+  let position = 1;
+  ranking.forEach((rankingLine, index) => {
+    if (index === 0) {
+      rankingLine.user.position = position;
+    } else {
+      if (
+        rankingLine.score.total === ranking[index - 1].score.total &&
+        rankingLine.score.bullseye === ranking[index - 1].score.bullseye
+      ) {
+        rankingLine.user.position = ranking[index - 1].user.position;
+      } else {
+        rankingLine.user.position = position;
+      }
+    }
+    position++;
+  });
+
+  return ranking;
+};
+
+/**
+ * buildSeasonUserRanking - Builds the seasonal ranking.
+ *
+ * @users: All users to include in the ranking.
+ * @matches: The set of matches to calculate the points from.
+ * @bets: The bets placed by the users.
+ * @extras: The extra bets placed by the users.
+ * @extrasResults: The correct extra bets results.
+ * @totalPossiblePoints: The total possible points a user could have achieved in that set of matches.
+ *
+ * @return: The ranking line for all users.
+ */
 export const buildSeasonUserRanking = (
   users: IUser[],
   matches: IMatch[],
@@ -19,30 +77,46 @@ export const buildSeasonUserRanking = (
       const extrasReward = calculateExtrasReward(user, extras, extrasResults);
       const rankingLine = calculateUserPoints(user, matches, bets, totalPossiblePoints);
 
-      rankingLine.score.total += extrasReward + 2;
+      rankingLine.score.total += extrasReward;
       rankingLine.score.extras = extrasReward;
 
       return rankingLine;
     })
-    .sort((a, b) => b.score.total - a.score.total || b.score.bullseye - a.score.bullseye || a.user.name.localeCompare(b.user.name));
+    .sort(
+      (a, b) =>
+        b.score.total - a.score.total || b.score.bullseye - a.score.bullseye || a.user.name.localeCompare(b.user.name),
+    );
 
-  // let position = 1;
-  // usersObject.forEach((user, index) => {
-  //   if (index === 0) {
-  //     user.position = position;
-  //   } else {
-  //     if (user.totalPoints === usersObject[index - 1].totalPoints && user.totalBullseye === usersObject[index - 1].totalBullseye) {
-  //       user.position = usersObject[index - 1].position;
-  //     } else {
-  //       user.position = position;
-  //     }
-  //   }
-  //   position++;
-  // });
+  let position = 1;
+  ranking.forEach((rankingLine, index) => {
+    if (index === 0) {
+      rankingLine.user.position = position;
+    } else {
+      if (
+        rankingLine.score.total === ranking[index - 1].score.total &&
+        rankingLine.score.bullseye === ranking[index - 1].score.bullseye
+      ) {
+        rankingLine.user.position = ranking[index - 1].user.position;
+      } else {
+        rankingLine.user.position = position;
+      }
+    }
+    position++;
+  });
 
   return ranking;
 };
 
+/**
+ * calculateUserPoints - For a specific user and for a set of matches, calculates how many points they will be rewarded from their bets.
+ *
+ * @user: The user to calculate the points for.
+ * @matches: The set of matches to calculate the points from.
+ * @bets: The bets placed by the user.
+ * @totalPossiblePoints: The total possible points the user could have achieved in that set of matches.
+ *
+ * @return: The ranking line for that user in that set of matches.
+ */
 const calculateUserPoints = (user: IUser, matches: IMatch[], bets: IBet[], totalPossiblePoints: number) => {
   let points = 0;
   let bullseyeCount = 0;
@@ -105,6 +179,15 @@ const calculateUserPoints = (user: IUser, matches: IMatch[], bets: IBet[], total
   return rankingLine;
 };
 
+/**
+ * calculateBetReward - For a specific match, calculates the points a user will be rewarded from their bet.
+ *
+ * @match: The match where the bet was placed.
+ * @betValue: The bet placed by the user, in BetsValues.
+ * @maxPoints: Maximum points that match can award.
+ *
+ * @return: The maximum points for the user in that set of matches, in that season.
+ */
 const calculateBetReward = (match: IMatch, betValue: BetsValues, maxPoints: number) => {
   if (match.awayScore - match.homeScore > 0) {
     // away team won
@@ -156,7 +239,18 @@ const calculateBetReward = (match: IMatch, betValue: BetsValues, maxPoints: numb
   return 0;
 };
 
+/**
+ * calculateExtrasReward - Calculates how many points a user will be rewarded from Extra Bets.
+ *
+ * @user: The user to calculate the points for.
+ * @extras: The extra bets that user made.
+ * @extrasResults: The correct results of the extra bets.
+ *
+ * @return: The maximum points for the user in that set of matches, in that season.
+ */
 const calculateExtrasReward = (user: IUser, extras: IExtraBet[], extrasResults: IExtraBet | null) => {
+  // return 0;
+
   if (extras.length === 0 || !extrasResults) {
     return 0;
   }
@@ -170,15 +264,13 @@ const calculateExtrasReward = (user: IUser, extras: IExtraBet[], extrasResults: 
   const userExtrasParsed = JSON.parse(userExtras.json) as IRawExtras;
   const extrasResultsParsed = JSON.parse(extrasResults.json) as IRawExtras;
 
-  if (user.id === 4) {
-    console.log(userExtras);
-    console.log(extrasResults);
-  }
-
   const keys = Object.keys(userExtrasParsed) as (keyof typeof userExtrasParsed)[];
 
   keys.forEach((key) => {
-    if (parseInt(key) === EXTRA_BETS_MAPPING.AFC_WILDCARD.TYPE || parseInt(key) === EXTRA_BETS_MAPPING.NFC_WILDCARD.TYPE) {
+    if (
+      parseInt(key) === EXTRA_BETS_MAPPING.AFC_WILDCARD.TYPE ||
+      parseInt(key) === EXTRA_BETS_MAPPING.NFC_WILDCARD.TYPE
+    ) {
       const keyValue = userExtrasParsed[key] as number[];
       keyValue.forEach((wildCardBet) => {
         const resultsKeyValue = extrasResultsParsed[key] as number[];
@@ -194,6 +286,28 @@ const calculateExtrasReward = (user: IUser, extras: IExtraBet[], extrasResults: 
   return extraBetsPoints;
 };
 
+/**
+ * calculateMaxPoints - Calculates the maximum points for a set of matches in a season.
+ *
+ * @season: The season to calculate the points for.
+ * @matches: The matches to calculate the points from.
+ *
+ * @return: The maximum points for the user in that set of matches, in that season.
+ */
 export const calculateMaxPoints = (season: number, matches: IMatch[]): number => {
-  return matches.reduce((acumulator: number, match: IMatch) => acumulator + maxPointsPerBet.season(season, match.week), 0);
+  return matches.reduce(
+    (acumulator: number, match: IMatch) => acumulator + maxPointsPerBet.season(season, match.week),
+    0,
+  );
+};
+
+/**
+ * isWeekLocked - Calculates whether a week is locked based on the matches statuses.
+ *
+ * @matches: The matches to be checked.
+ *
+ * @return: Whether the week is locked.
+ */
+export const isWeekLocked = (matches: IMatch[]): boolean => {
+  return matches.every((match: IMatch) => isMatchEnded(match.status));
 };
