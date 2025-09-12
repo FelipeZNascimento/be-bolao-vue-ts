@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { ErrorCode } from "../utils/errorCodes.ts";
+import { ErrorCode } from "./errorCodes.ts";
 
-export class ErrorHandler extends Error {
+export class AppError extends Error {
   public readonly code: ErrorCode;
   public readonly details?: any;
   public readonly isOperational: boolean;
@@ -18,14 +17,12 @@ export class ErrorHandler extends Error {
     this.statusCode = statusCode;
     this.code = code;
     this.isOperational = isOperational;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.details = details;
 
     Error.captureStackTrace(this, this.constructor);
   }
 }
 
-export const isAppError = (error: any): error is ErrorHandler => {
-  console.log("isAppError: ", error);
-  return error instanceof ErrorHandler;
+export const isAppError = (error: any): error is AppError => {
+  return error instanceof AppError;
 };

@@ -1,5 +1,6 @@
 {
   "extends": "@tsconfig/node22/tsconfig.json",
+  // "typeRoots": ["./src/shared", "./node_modules/@types"],
   "compilerOptions": {
     "target": "ES2022",
     "module": "Node16",
@@ -11,7 +12,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "noEmit": true,
+    "lib": ["es5", "es6", "dom", "dom.iterable"]
   },
   "include": ["**/*.ts"],
   "exclude": ["dist"]

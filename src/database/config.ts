@@ -6,6 +6,6 @@ const config = {
     user: process.env.SQL_USER,
   },
   listPerPage: 100,
-  port: 3000,
+  port: 3306,
 };
 export default config;

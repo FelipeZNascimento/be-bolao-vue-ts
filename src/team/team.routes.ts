@@ -8,5 +8,6 @@ const teamService = new TeamService();
 const teamController = new TeamController(teamService);
 
 router.get("/", teamController.getAll);
+router.get("/conferenceAndDivision", teamController.getByConferenceAndDivision);
 
 export default router;

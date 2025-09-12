@@ -1,0 +1,8 @@
+### FETCH EXTRA BETS FOR CURRENT SEASON IF SEASON HAS STARTED
+GET http://localhost:63768/bolaonfl/bet/extra
+content-type: application/json
+
+### FETCH EXTRA RESULTS
+
+GET http://localhost:63768/bolaonfl/bet/extra/results
+content-type: application/json

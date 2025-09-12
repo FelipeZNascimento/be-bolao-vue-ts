@@ -1,0 +1,20 @@
+### FETCH MATCHES FOR CURRENT SEASON AND WEEK
+GET http://localhost:3000/bolaonfl/match
+content-type: application/json
+
+### FETCH MATCHES FOR SEASON AND WEEK FROM PARAMS
+GET http://localhost:3000/bolaonfl/match/12/1
+content-type: application/json
+
+### UPDATE ODDS/OVER UNDER OF NON STARTED MATCH
+POST http://localhost:3000/bolaonfl/match/update/13/8otCTFFUeBNsTm6X
+content-type: application/json
+
+{
+    "awayTeamCode": "KC",
+    "homeTeamCode": "LAC",
+    "homeTeamOdds": "Odds",
+    "overUnder": "Over",
+    "status": 0,
+    "week": 1
+}
