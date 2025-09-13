@@ -1,24 +1,24 @@
 ### LIST ALL USERS
-GET http://localhost:3000/bolaonfl/user/
+GET http://localhost:63768/bolaonfl/user/
 content-type: application/json
 
 ### LIST ALL USERS
-GET http://localhost:3000/bolaonfl/user/activeProfile
+GET http://localhost:63768/bolaonfl/user/activeProfile
 content-type: application/json
 
 ### LIST SPECIFIC USER
 
-GET http://localhost:3000/bolaonfl/user/4
+GET http://localhost:63768/bolaonfl/user/4
 content-type: application/json
 
 ### LOGOUT
 
-GET http://localhost:3000/bolaonfl/user/logout
+GET http://localhost:63768/bolaonfl/user/logout
 content-type: application/json
 
 ### LOGIN
 
-POST http://localhost:3000/bolaonfl/user/login
+POST http://localhost:63768/bolaonfl/user/login
 content-type: application/json
 
 {
@@ -28,7 +28,7 @@ content-type: application/json
 
 ### REGISTER
 
-POST http://localhost:3000/bolaonfl/user/register
+POST http://localhost:63768/bolaonfl/user/register
 content-type: application/json
 
 {
@@ -42,7 +42,7 @@ content-type: application/json
 
 ### UPDATE PROFILE
 
-POST http://localhost:3000/bolaonfl/user/profile
+POST http://localhost:63768/bolaonfl/user/profile
 content-type: application/json
 
 {
@@ -53,7 +53,7 @@ content-type: application/json
 
 ### UPDATE PREFERENCES
 
-POST http://localhost:3000/bolaonfl/user/preferences
+POST http://localhost:63768/bolaonfl/user/preferences
 content-type: application/json
 
 {
@@ -63,10 +63,30 @@ content-type: application/json
 
 ### UPDATE PASSWORD
 
-POST http://localhost:3000/bolaonfl/user/password
+POST http://localhost:63768/bolaonfl/user/password
 content-type: application/json
 
 {
     "currentPassword": "ca624d21e6c18550aa5983708afcb7cc58cc1c62",
     "newPassword": "ca624d21e6c18550aa5983708afcb7cc58cc1c62"
+}
+
+### RESET PASSWORD
+
+POST http://localhost:63768/bolaonfl/user/forgot-password
+content-type: application/json
+
+{
+    "email": "sharpion.k@gmail.com"
+}
+
+### UPDATE PASSWORD FROM TOKEN
+
+POST http://localhost:63768/bolaonfl/user/password-token
+content-type: application/json
+
+{
+    "email": "sharpion.k@gmail.com",
+    "newPassword": "ca624d21e6c18550aa5983708afcb7cc58cc1c62",
+    "token": "4m7qxct7v96raryppzu6gb"
 }

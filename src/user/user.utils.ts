@@ -25,3 +25,10 @@ export const validateEmail = (email: string) => {
     /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   return re.test(email.toLowerCase());
 };
+
+export const generateVerificationToken = (): string => {
+  const randomA = Math.random().toString(36).substring(2); // remove `0.`
+  const randomB = Math.random().toString(36).substring(2); // remove `0.`
+
+  return `${randomA}${randomB}`;
+};

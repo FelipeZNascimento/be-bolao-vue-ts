@@ -5,6 +5,23 @@ import { ResultSetHeader } from "mysql2/promise";
 import { IUser } from "./user.types.ts";
 
 export class UserService {
+  async getByEmail(email: string) {
+    const [row] = (await db.query(
+      `SELECT SQL_NO_CACHE users.id, users.login as email, users.name, users.full_name as fullName,
+        users_icon.icon, users_icon.color, unix_timestamp(users_online.timestamp) as timestamp,
+        users_season.id AS seasonId
+        FROM users
+        INNER JOIN users_season ON users.id = users_season.id_user
+        LEFT JOIN users_icon ON users.id = users_icon.id_user
+        LEFT JOIN users_online ON users.id = users_online.id_user
+        WHERE users.login = ?
+        GROUP BY users.id`,
+      [email],
+    )) as IUser[];
+
+    return row;
+  }
+
   async getById(userId: number) {
     const [row] = (await db.query(
       `SELECT SQL_NO_CACHE users.id, users.login as email, users.name, users.full_name as fullName,
@@ -120,6 +137,17 @@ export class UserService {
         WHERE id = ?
         AND password = ?`,
       [newPassword, id, currentPassword],
+    )) as ResultSetHeader;
+
+    return rows;
+  }
+
+  async updatePasswordFromToken(newPassword: string, id: number) {
+    const rows = (await db.query(
+      `UPDATE users 
+        SET password = ?
+        WHERE id = ?`,
+      [newPassword, id],
     )) as ResultSetHeader;
 
     return rows;
