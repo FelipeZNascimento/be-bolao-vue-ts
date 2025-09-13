@@ -1,12 +1,14 @@
+import { MailerService } from "#mailer/mailer.service.ts";
 import { BaseController } from "#shared/base.controller.ts";
 import { UserService } from "#user/user.service.ts";
 import { isRejected } from "#utils/apiResponse.ts";
 import { AppError } from "#utils/appError.ts";
+import { cachedInfo } from "#utils/dataCache.ts";
 import { ErrorCode } from "#utils/errorCodes.ts";
 import { NextFunction, Request, Response } from "express";
 
 import { IUser } from "./user.types.ts";
-import { checkExistingEntries, validateEmail } from "./user.utils.ts";
+import { checkExistingEntries, generateVerificationToken, validateEmail } from "./user.utils.ts";
 
 // Extend express-session types to include 'user' property
 declare module "express-session" {
@@ -16,9 +18,28 @@ declare module "express-session" {
 }
 
 export class UserController extends BaseController {
-  constructor(private userService: UserService) {
+  constructor(
+    private userService: UserService,
+    private mailerService: MailerService,
+  ) {
     super();
   }
+
+  forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    await this.handleRequest(req, res, next, async () => {
+      const reqBody = req.body as { email: string };
+      const { email } = reqBody;
+
+      if (!email) {
+        throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
+      }
+
+      const resetToken = generateVerificationToken();
+      cachedInfo.set(`PASSWORD_RESET_${email}`, resetToken, 60 * 60); // 60 minutes expiration
+
+      await this.mailerService.sendPasswordResetEmail(email, "", resetToken);
+    });
+  };
 
   getActiveProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
@@ -182,6 +203,28 @@ export class UserController extends BaseController {
       }
 
       return;
+    });
+  };
+
+  updatePasswordFromToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    await this.handleRequest(req, res, next, async () => {
+      const reqBody = req.body as { email: string; newPassword: string; token: string };
+      const { email, newPassword, token } = reqBody;
+
+      if (!email || !token || !newPassword) {
+        throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
+      }
+
+      // void this.userService.updateLastOnlineTime(user.id);
+      const cachedToken = cachedInfo.get(`PASSWORD_RESET_${email}`);
+      if (cachedToken !== token) {
+        throw new AppError("Token inválido ou expirado", 409, ErrorCode.VALIDATION_ERROR);
+      }
+
+      const user = await this.userService.getByEmail(email);
+
+      cachedInfo.del(`PASSWORD_RESET_${email}`);
+      return await this.userService.updatePasswordFromToken(newPassword, user.id);
     });
   };
 
