@@ -10,7 +10,6 @@ export class MailerService {
 
   constructor() {
     // Production SMTP setup
-    console.log(ENV.SMTP_USER, ENV.SMTP_PASSWORD, ENV.SMTP_HOST, ENV.SMTP_PORT);
     this.transporter = createTransport({
       auth: {
         pass: ENV.SMTP_PASSWORD ?? "",
@@ -94,7 +93,6 @@ export class MailerService {
   }
 
   private async testConnection() {
-    console.log(this.transporter);
     try {
       await this.transporter.verify();
       console.info("SMTP connection verified");
