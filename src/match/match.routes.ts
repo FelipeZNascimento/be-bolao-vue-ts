@@ -1,18 +1,21 @@
 import { BetService } from "#bet/bet.service.ts";
 import { TeamService } from "#team/team.service.ts";
 import { UserService } from "#user/user.service.ts";
+import { WebSocketService } from "#websocket/websocket.service.ts";
 import express from "express";
 
 import { MatchController } from "./match.controller.ts";
 import { MatchService } from "./match.service.ts";
 
 const router = express.Router();
+
+const websocketInstance = WebSocketService.getInstance();
 const matchService = new MatchService();
 const userService = new UserService();
 const betService = new BetService();
 const teamService = new TeamService();
 
-const matchController = new MatchController(matchService, userService, betService, teamService);
+const matchController = new MatchController(matchService, userService, betService, teamService, websocketInstance);
 
 router.get("/", matchController.getBySeasonWeek);
 router.get("/:season/:week", matchController.getBySeasonWeek);

@@ -6,14 +6,16 @@ import { TeamService } from "#team/team.service.ts";
 import { ITeam } from "#team/team.types.ts";
 import { getFromCacheOrFetch, setTeamsCache } from "#team/team.util.ts";
 import { UserService } from "#user/user.service.ts";
-import { isFulfilled } from "#utils/apiResponse.ts";
+import { isFulfilled, isRejected } from "#utils/apiResponse.ts";
 import { AppError } from "#utils/appError.ts";
 import { CACHE_KEYS, cachedInfo } from "#utils/dataCache.ts";
 import { ErrorCode } from "#utils/errorCodes.ts";
+import { WebSocketService } from "#websocket/websocket.service.ts";
 import { NextFunction, Request, Response } from "express";
 
 import { MATCH_STATUS, MatchStatus } from "./match.constants.ts";
 import { IMatch } from "./match.types.ts";
+import { parseQueryResponse } from "./match.utils.ts";
 
 export class MatchController extends BaseController {
   constructor(
@@ -21,6 +23,7 @@ export class MatchController extends BaseController {
     private userService: UserService,
     private betService: BetService,
     private teamService: TeamService,
+    private websocketInstance: WebSocketService,
   ) {
     super();
   }
@@ -55,9 +58,13 @@ export class MatchController extends BaseController {
       if (user) {
         queries.push(this.betService.getUserMatchesBetsByMatchIds(matchesIds, user.id));
       }
-      const queriesResponse = await Promise.allSettled(queries);
+      const [startedMatchesBetsResponse, userBetsResponse] = await Promise.allSettled(queries);
 
-      const [startedMatchesBetsResponse, userBetsResponse] = queriesResponse;
+      // Only throw if user or matches fetch failed
+      if (isRejected(startedMatchesBetsResponse) || (user && isRejected(userBetsResponse))) {
+        throw new AppError("Base de dados inacessível", 204, ErrorCode.DB_ERROR);
+      }
+
       const startedMatchesBets: IBet[] = isFulfilled(startedMatchesBetsResponse)
         ? startedMatchesBetsResponse.value
         : [];
@@ -108,35 +115,12 @@ export class MatchController extends BaseController {
           throw new AppError("Equipe não encontrada", 400, ErrorCode.MISSING_REQUIRED_FIELD);
         }
 
+        const parsedResponse = parseQueryResponse(match, homeTeam, awayTeam);
+
         return {
-          away: {
-            alias: awayTeam.alias,
-            background: awayTeam.background,
-            code: awayTeam.code,
-            foreground: awayTeam.foreground,
-            id: awayTeam.id,
-            name: awayTeam.name,
-            possession: match.possession === "away",
-            score: match.awayScore,
-          },
+          ...parsedResponse,
           bets: allBetsObject,
-          clock: match.clock,
-          home: {
-            alias: homeTeam.alias,
-            background: homeTeam.background,
-            code: homeTeam.code,
-            foreground: homeTeam.foreground,
-            id: homeTeam.id,
-            name: homeTeam.name,
-            possession: match.possession === "home",
-            score: match.homeScore,
-          },
-          homeTeamOdds: match.homeTeamOdds,
-          id: match.id,
           loggedUserBets: loggedUserBetsObject,
-          overUnder: match.overUnder,
-          status: match.status,
-          timestamp: match.timestamp,
         };
       });
 
@@ -152,6 +136,7 @@ export class MatchController extends BaseController {
     await this.handleRequest(req, res, next, async () => {
       const teams: ITeam[] = await getFromCacheOrFetch(this.teamService);
       const season = process.env.SEASON;
+      let updateResponse;
 
       if (!season) {
         throw new AppError("Erro de inicialização", 404, ErrorCode.INTERNAL_SERVER_ERROR);
@@ -219,7 +204,7 @@ export class MatchController extends BaseController {
         week !== null
       ) {
         // If match has not started, we can only update odds info
-        return await this.matchService.updateOddsByMatchInfo(
+        updateResponse = await this.matchService.updateOddsByMatchInfo(
           overUnder,
           homeTeamOdds,
           awayTeamCode,
@@ -238,7 +223,7 @@ export class MatchController extends BaseController {
         week !== null
       ) {
         // If match has started, we can update all info
-        return await this.matchService.updateByMatchInfo(
+        updateResponse = await this.matchService.updateByMatchInfo(
           awayPoints,
           homePoints,
           status,
@@ -252,6 +237,26 @@ export class MatchController extends BaseController {
       } else {
         throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
+
+      if (updateResponse.affectedRows === 0) {
+        const season = process.env.SEASON;
+        const week = cachedInfo.get<number>(CACHE_KEYS.CURRENT_WEEK);
+        if (season && week) {
+          const updatedMatches = await this.matchService.getBySeasonWeek(parseInt(season), week);
+          const parsedMatches = updatedMatches.map((match) => {
+            const awayTeam = teams.find((team) => team.id === match.idTeamAway);
+            const homeTeam = teams.find((team) => team.id === match.idTeamHome);
+
+            if (!awayTeam || !homeTeam) {
+              throw new AppError("Equipe não encontrada", 400, ErrorCode.MISSING_REQUIRED_FIELD);
+            }
+
+            return parseQueryResponse(match, homeTeam, awayTeam);
+          });
+          this.websocketInstance.broadcast(JSON.stringify(parsedMatches));
+        }
+      }
+      return updateResponse;
     });
   };
 }
