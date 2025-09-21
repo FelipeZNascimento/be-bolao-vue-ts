@@ -1,7 +1,7 @@
 import { CACHE_KEYS, cachedInfo } from "#utils/dataCache.ts";
 
 import { TeamService } from "./team.service.ts";
-import { ITeam } from "./team.types.ts";
+import { type ITeam } from "./team.types.ts";
 /**
  * getFromCacheOrFetch - Returns all teams from cache or fetches from database if not present in cache.
  *

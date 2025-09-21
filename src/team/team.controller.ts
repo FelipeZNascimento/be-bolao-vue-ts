@@ -1,13 +1,17 @@
+import type { NextFunction, Request, Response } from "express";
+
 import { BaseController } from "#shared/base.controller.ts";
 import { TeamService } from "#team/team.service.ts";
 import { CACHE_KEYS, cachedInfo } from "#utils/dataCache.ts";
-import { NextFunction, Request, Response } from "express";
 
-import { ITeam } from "./team.types.ts";
+import { type ITeam } from "./team.types.ts";
 
 export class TeamController extends BaseController {
-  constructor(private teamService: TeamService) {
+  private teamService: TeamService;
+
+  constructor(teamService: TeamService) {
     super();
+    this.teamService = teamService;
   }
 
   getAll = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

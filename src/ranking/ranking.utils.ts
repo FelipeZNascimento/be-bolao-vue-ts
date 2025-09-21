@@ -1,10 +1,11 @@
-import { IBet, IExtraBet } from "#bet/bet.types.ts";
-import { BET_VALUES, BetsValues, EXTRA_BETS_MAPPING, maxPointsPerBet } from "#bet/bet.utils.ts";
-import { IMatch } from "#match/match.types.ts";
-import { isMatchEnded } from "#match/match.utils.ts";
-import { IUser } from "#user/user.types.ts";
+import type { IBet, IExtraBet } from "#bet/bet.types.ts";
+import type { IMatch } from "#match/match.types.ts";
+import type { IUser } from "#user/user.types.ts";
 
-import { IRankingLine, IRawExtras } from "./ranking.types.ts";
+import { BET_VALUES, BetsValues, EXTRA_BETS_MAPPING, maxPointsPerBet } from "#bet/bet.utils.ts";
+import { isMatchEnded } from "#match/match.utils.ts";
+
+import type { IRankingLine, IRawExtras } from "./ranking.types.ts";
 /**
  * buildWeeklyUserRanking - Builds the weekly ranking.
  *

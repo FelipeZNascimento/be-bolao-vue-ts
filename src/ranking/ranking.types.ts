@@ -1,4 +1,4 @@
-import { IUser } from "#user/user.types.ts";
+import type { IUser } from "#user/user.types.ts";
 
 export interface IRankingLine {
   betsCount: number;

@@ -1,6 +1,6 @@
-import app from "#app.ts";
-import { connection } from "#database/db.ts";
-import { WebSocketService } from "#websocket/websocket.service.ts";
+import app from "./app.ts";
+import { connection } from "./database/db.ts";
+import { WebSocketService } from "./websocket/websocket.service.ts";
 
 const port = process.env.PORT ?? "9001";
 

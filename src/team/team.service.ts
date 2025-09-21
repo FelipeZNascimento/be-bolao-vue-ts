@@ -1,7 +1,7 @@
 import db from "#database/db.ts";
 import { CACHE_KEYS, cachedInfo } from "#utils/dataCache.ts";
 
-import { ITeam } from "./team.types.ts";
+import { type ITeam } from "./team.types.ts";
 
 export class TeamService {
   async getAll() {

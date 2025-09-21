@@ -2,18 +2,20 @@
   "extends": "@tsconfig/node22/tsconfig.json",
   // "typeRoots": ["./src/shared", "./node_modules/@types"],
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "Node16",
-    "moduleResolution": "Node16",
-    "outDir": "./dist/",
+    "target": "esnext",
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
+    "outDir": "dist",
     "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
-    "lib": ["es5", "es6", "dom", "dom.iterable"]
+    // "noEmit": true,
+    "lib": ["es5", "es6", "dom", "dom.iterable"],
+    "rewriteRelativeImportExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true
   },
   "include": ["**/*.ts"],
   "exclude": ["dist"]

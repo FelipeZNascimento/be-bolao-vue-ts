@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { type Response } from "express";
 
 export const ApiResponse = {
   error(res: Response, message: string, statusCode = 400, code?: string): void {

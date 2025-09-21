@@ -1,29 +1,42 @@
+import type { IMatch } from "#match/match.types.ts";
+import type { ITeam } from "#team/team.types.ts";
+import type { NextFunction, Request, Response } from "express";
+
 import { BetService } from "#bet/bet.service.ts";
 import { MatchService } from "#match/match.service.ts";
-import { IMatch } from "#match/match.types.ts";
 import { RankingService } from "#ranking/ranking.service.ts";
 import { BaseController } from "#shared/base.controller.ts";
 import { TeamService } from "#team/team.service.ts";
-import { ITeam } from "#team/team.types.ts";
 import { UserService } from "#user/user.service.ts";
 import { isFulfilled, isRejected } from "#utils/apiResponse.ts";
 import { AppError } from "#utils/appError.ts";
 import { CACHE_KEYS, cachedInfo } from "#utils/dataCache.ts";
 import { ErrorCode } from "#utils/errorCodes.ts";
-import { NextFunction, Request, Response } from "express";
 
-import { IRankingLine } from "./ranking.types.ts";
+import type { IRankingLine } from "./ranking.types.ts";
+
 import { buildSeasonUserRanking, buildWeeklyUserRanking, calculateMaxPoints, isWeekLocked } from "./ranking.utils.ts";
 
 export class RankingController extends BaseController {
+  private betService: BetService;
+  private matchService: MatchService;
+  private rankingService: RankingService;
+  private teamService: TeamService;
+  private userService: UserService;
+
   constructor(
-    private rankingService: RankingService,
-    private userService: UserService,
-    private matchService: MatchService,
-    private teamService: TeamService,
-    private betService: BetService,
+    rankingService: RankingService,
+    userService: UserService,
+    matchService: MatchService,
+    teamService: TeamService,
+    betService: BetService,
   ) {
     super();
+    this.rankingService = rankingService;
+    this.userService = userService;
+    this.matchService = matchService;
+    this.teamService = teamService;
+    this.betService = betService;
   }
 
   getSeason = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

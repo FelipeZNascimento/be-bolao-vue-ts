@@ -1,3 +1,5 @@
+import type { NextFunction, Request, Response } from "express";
+
 import { MailerService } from "#mailer/mailer.service.ts";
 import { BaseController } from "#shared/base.controller.ts";
 import { UserService } from "#user/user.service.ts";
@@ -5,9 +7,8 @@ import { isRejected } from "#utils/apiResponse.ts";
 import { AppError } from "#utils/appError.ts";
 import { cachedInfo } from "#utils/dataCache.ts";
 import { ErrorCode } from "#utils/errorCodes.ts";
-import { NextFunction, Request, Response } from "express";
 
-import { IUser } from "./user.types.ts";
+import { type IUser } from "./user.types.ts";
 import { checkExistingEntries, generateVerificationToken, validateEmail } from "./user.utils.ts";
 
 // Extend express-session types to include 'user' property
@@ -18,11 +19,13 @@ declare module "express-session" {
 }
 
 export class UserController extends BaseController {
-  constructor(
-    private userService: UserService,
-    private mailerService: MailerService,
-  ) {
+  private mailerService: MailerService;
+  private userService: UserService;
+
+  constructor(userService: UserService, mailerService: MailerService) {
     super();
+    this.userService = userService;
+    this.mailerService = mailerService;
   }
 
   forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

@@ -1,7 +1,7 @@
-import { ErrorCode } from "./errorCodes.ts";
+import { ErrorCode, type ErrorCodeValues } from "./errorCodes.ts";
 
 export class AppError extends Error {
-  public readonly code: ErrorCode;
+  public readonly code: ErrorCodeValues;
   public readonly details?: any;
   public readonly isOperational: boolean;
   public readonly statusCode: number;
@@ -9,7 +9,7 @@ export class AppError extends Error {
   constructor(
     message: string,
     statusCode = 500,
-    code: ErrorCode = ErrorCode.INTERNAL_SERVER_ERROR,
+    code = ErrorCode.INTERNAL_SERVER_ERROR,
     isOperational = true,
     details?: any,
   ) {

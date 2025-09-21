@@ -1,8 +1,8 @@
 import db from "#database/db.ts";
-import { ICount } from "#shared/shared.types.ts";
-import { ResultSetHeader } from "mysql2/promise";
+import { type ICount } from "#shared/shared.types.ts";
+import { type ResultSetHeader } from "mysql2/promise";
 
-import { IUser } from "./user.types.ts";
+import { type IUser } from "./user.types.ts";
 
 export class UserService {
   async getByEmail(email: string) {

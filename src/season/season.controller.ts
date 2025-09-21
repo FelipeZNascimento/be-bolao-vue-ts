@@ -1,11 +1,15 @@
+import type { NextFunction, Request, Response } from "express";
+
 import { MatchService } from "#match/match.service.ts";
 import { BaseController } from "#shared/base.controller.ts";
 import { CACHE_KEYS, cachedInfo } from "#utils/dataCache.ts";
-import { NextFunction, Request, Response } from "express";
 
 export class SeasonController extends BaseController {
-  constructor(private matchService: MatchService) {
+  private matchService: MatchService;
+
+  constructor(matchService: MatchService) {
     super();
+    this.matchService = matchService;
   }
 
   getCurrentSeasonAndWeek = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
