@@ -1,9 +1,9 @@
-import { BaseController } from "#shared/base.controller.ts";
-import { TeamService } from "#team/team.service.ts";
-import { CACHE_KEYS, cachedInfo } from "#utils/dataCache.ts";
-import { NextFunction, Request, Response } from "express";
+import type { ITeam } from "#team/team.types.js";
 
-import { ITeam } from "./team.types.ts";
+import { BaseController } from "#shared/base.controller.js";
+import { TeamService } from "#team/team.service.js";
+import { CACHE_KEYS, cachedInfo } from "#utils/dataCache.js";
+import { NextFunction, Request, Response } from "express";
 
 export class TeamController extends BaseController {
   constructor(private teamService: TeamService) {

@@ -1,6 +1,5 @@
+import config from "#database/config.js";
 import mysql from "mysql2/promise";
-
-import config from "./config.ts";
 
 export const connection = mysql.createPool(config.db);
 
@@ -29,14 +28,14 @@ async function query(sql: string, params: any) {
   return results;
 }
 
-// Soft shutdown handler
-const handleShutdown = () => {
-  console.log("Shutting down database connection");
-  connection.destroy();
-};
+// // Soft shutdown handler
+// const handleShutdown = () => {
+//   console.log("Shutting down database connection");
+//   connection.destroy();
+// };
 
-process.on("SIGTERM", handleShutdown);
-process.on("SIGINT", handleShutdown);
+// process.on("SIGTERM", handleShutdown);
+// process.on("SIGINT", handleShutdown);
 
 export default {
   query,

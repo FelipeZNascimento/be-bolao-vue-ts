@@ -1,11 +1,10 @@
-import { BetService } from "#bet/bet.service.ts";
-import { TeamService } from "#team/team.service.ts";
-import { UserService } from "#user/user.service.ts";
-import { WebSocketService } from "#websocket/websocket.service.ts";
+import { BetService } from "#bet/bet.service.js";
+import { MatchController } from "#match/match.controller.js";
+import { MatchService } from "#match/match.service.js";
+import { TeamService } from "#team/team.service.js";
+import { UserService } from "#user/user.service.js";
+import { WebSocketService } from "#websocket/websocket.service.js";
 import express from "express";
-
-import { MatchController } from "./match.controller.ts";
-import { MatchService } from "./match.service.ts";
 
 const router = express.Router();
 

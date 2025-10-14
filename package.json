@@ -1,12 +1,18 @@
 {
-  "name": "nodejs-boilerplate",
+  "name": "be-bolao-vue-ts",
   "version": "1.0.0",
-  "description": "An Express.js template with TypeScript, ESLint and Prettier",
+  "description": "Bolao BE in NodeJS with TypeScript and Express",
   "type": "module",
+  "files": [
+    "dist/**"
+  ],
+  "main": "dist/index.js",
   "scripts": {
     "dev": "tsx --watch --env-file .env src/index.ts",
     "start": "node --env-file .env dist/src/index.js",
-    "build": "tsc -p tsconfig.build.json",
+    "start:prod": "pm2 start \"node --env-file=.env index.js\"",
+    "build": "tsc -p tsconfig.build.json && tsc-alias",
+    "postbuild": "cp package.json dist/package.json && cp .env dist/.env",
     "test": "vitest",
     "test:run": "vitest --run",
     "test:ui": "vitest --ui",
@@ -20,7 +26,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/FelipeZNascimento/nodejs-boilerplate.git"
+    "url": "git+https://github.com/FelipeZNascimento/be-bolao-vue-ts.git"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
@@ -35,9 +41,9 @@
   "author": "Felipe Zanon do Nascimento",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/FelipeZNascimento/nodejs-boilerplate/issues"
+    "url": "https://github.com/FelipeZNascimento/be-bolao-vue-ts/issues"
   },
-  "homepage": "https://github.com/FelipeZNascimento/nodejs-boilerplate#readme",
+  "homepage": "https://github.com/FelipeZNascimento/be-bolao-vue-ts#readme",
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^5.1.0",
@@ -67,6 +73,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.1.5",
     "prettier": "^3.6.2",
+    "tsc-alias": "^1.8.16",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.41.0",

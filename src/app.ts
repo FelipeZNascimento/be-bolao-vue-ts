@@ -1,14 +1,14 @@
-import betRoutes from "#bet/bet.routes.ts";
-import config from "#database/config.ts";
-import { connection } from "#database/db.ts";
-import matchRoutes from "#match/match.routes.ts";
-import { errorHandler } from "#middlewares/errorHandler.ts";
-import { cache, middleware } from "#middlewares/middlewares.ts";
-import rankingRoutes from "#ranking/ranking.routes.ts";
-import seasonRoutes from "#season/season.routes.ts";
-import teamRoutes from "#team/team.routes.ts";
-import userRoutes from "#user/user.routes.ts";
-import { IUser } from "#user/user.types.ts";
+import betRoutes from "#bet/bet.routes.js";
+import config from "#database/config.js";
+import { connection } from "#database/db.js";
+import matchRoutes from "#match/match.routes.js";
+import { errorHandler } from "#middlewares/errorHandler.js";
+import { cache, middleware } from "#middlewares/middlewares.js";
+import rankingRoutes from "#ranking/ranking.routes.js";
+import seasonRoutes from "#season/season.routes.js";
+import teamRoutes from "#team/team.routes.js";
+import userRoutes from "#user/user.routes.js";
+import { IUser } from "#user/user.types.js";
 import cors from "cors";
 import express, { ErrorRequestHandler } from "express";
 import mySqlSession from "express-mysql-session";
@@ -65,6 +65,7 @@ const allowedOrigins = [
   "https://localhost:3000",
   "http://localhost:3000",
   /\.omegafox\.me$/,
+  /\.sharpion\.cloud$/,
 ];
 
 const corsOptions = {
@@ -75,12 +76,12 @@ const corsOptions = {
 };
 app.use(express.json());
 app.use(cors(corsOptions));
-app.use("/bolaonfl/season", seasonRoutes);
-app.use("/bolaonfl/bet", betRoutes);
-app.use("/bolaonfl/ranking", rankingRoutes);
-app.use("/bolaonfl/user", userRoutes);
-app.use("/bolaonfl/match", matchRoutes);
-app.use("/bolaonfl/team", cache(), teamRoutes);
+app.use("/bolaonflv2/season", seasonRoutes);
+app.use("/bolaonflv2/bet", betRoutes);
+app.use("/bolaonflv2/ranking", rankingRoutes);
+app.use("/bolaonflv2/user", userRoutes);
+app.use("/bolaonflv2/match", matchRoutes);
+app.use("/bolaonflv2/team", cache(), teamRoutes);
 
 // app.options("*", cors());
 

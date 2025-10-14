@@ -1,4 +1,6 @@
-import { IUser } from "#user/user.types.ts";
+import type { IUser } from "#user/user.types.js";
+
+import { IMatch } from "#match/match.types.js";
 
 export interface IRankingLine {
   betsCount: number;
@@ -30,4 +32,11 @@ export interface IRawExtras {
   "12": number[];
   "13": number[];
   TExtraType: number;
+}
+
+export interface IWeeklyRanking {
+  matchCount: number;
+  matches: IMatch[];
+  ranking: IRankingLine[];
+  week: number;
 }

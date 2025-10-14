@@ -1,8 +1,7 @@
-import { ENV } from "#utils/envParser.ts";
-import { createTransport, Transporter, TransportOptions } from "nodemailer";
-
 // import { logger } from "@/config/logger";
-import { getPasswordResetEmailTemplate } from "./reset.template.ts";
+import { getPasswordResetEmailTemplate } from "#mailer/reset.template.js";
+import { ENV } from "#utils/envParser.js";
+import { createTransport, Transporter, TransportOptions } from "nodemailer";
 
 export class MailerService {
   private readonly fromAddress: string;

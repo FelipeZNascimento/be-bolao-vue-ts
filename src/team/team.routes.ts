@@ -1,7 +1,6 @@
+import { TeamController } from "#team/team.controller.js";
+import { TeamService } from "#team/team.service.js";
 import express from "express";
-
-import { TeamController } from "./team.controller.ts";
-import { TeamService } from "./team.service.ts";
 
 const router = express.Router();
 const teamService = new TeamService();

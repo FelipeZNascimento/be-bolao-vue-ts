@@ -1,4 +1,4 @@
-import { ITeam } from "#team/team.types.ts";
+import type { ITeam } from "#team/team.types.js";
 
 /* eslint-disable perfectionist/sort-objects */
 const SUPERBOWL_WINNER_POINTS = 100;

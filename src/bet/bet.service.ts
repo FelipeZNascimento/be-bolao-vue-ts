@@ -1,7 +1,7 @@
-import db from "#database/db.ts";
-import { ResultSetHeader } from "mysql2/promise";
+import type { IBet, IExtraBet } from "#bet/bet.types.js";
 
-import { IBet, IExtraBet } from "./bet.types.ts";
+import db from "#database/db.js";
+import { ResultSetHeader } from "mysql2/promise";
 
 export class BetService {
   async getExtras(season: number, seasonStart: number) {
@@ -20,14 +20,13 @@ export class BetService {
   }
 
   async getExtrasResults(season: number, seasonStart: number) {
-    console.log(seasonStart, season);
-    const [row] = (await db.query(
+    const row = (await db.query(
       `SELECT SQL_NO_CACHE id_season as idSeason, json
         FROM extra_bets_results_new
         WHERE id_season = ?
         AND UNIX_TIMESTAMP() >= ?`,
       [season, seasonStart],
-    )) as IExtraBet[];
+    )) as IExtraBet[] | undefined;
 
     return row;
   }

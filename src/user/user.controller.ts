@@ -1,14 +1,14 @@
-import { MailerService } from "#mailer/mailer.service.ts";
-import { BaseController } from "#shared/base.controller.ts";
-import { UserService } from "#user/user.service.ts";
-import { isRejected } from "#utils/apiResponse.ts";
-import { AppError } from "#utils/appError.ts";
-import { cachedInfo } from "#utils/dataCache.ts";
-import { ErrorCode } from "#utils/errorCodes.ts";
-import { NextFunction, Request, Response } from "express";
+import type { IUser } from "#user/user.types.js";
 
-import { IUser } from "./user.types.ts";
-import { checkExistingEntries, generateVerificationToken, validateEmail } from "./user.utils.ts";
+import { MailerService } from "#mailer/mailer.service.js";
+import { BaseController } from "#shared/base.controller.js";
+import { UserService } from "#user/user.service.js";
+import { checkExistingEntries, generateVerificationToken, validateEmail } from "#user/user.utils.js";
+import { isRejected } from "#utils/apiResponse.js";
+import { AppError } from "#utils/appError.js";
+import { cachedInfo } from "#utils/dataCache.js";
+import { ErrorCode } from "#utils/errorCodes.js";
+import { NextFunction, Request, Response } from "express";
 
 // Extend express-session types to include 'user' property
 declare module "express-session" {

@@ -1,4 +1,4 @@
-import { ITeam } from "#team/team.types.ts";
+import { ITeam } from "#team/team.types.js";
 import { RowDataPacket } from "mysql2/promise";
 
 export interface IMatch extends RowDataPacket {

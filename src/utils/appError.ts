@@ -1,4 +1,4 @@
-import { ErrorCode } from "./errorCodes.ts";
+import { ErrorCode } from "#utils/errorCodes.js";
 
 export class AppError extends Error {
   public readonly code: ErrorCode;

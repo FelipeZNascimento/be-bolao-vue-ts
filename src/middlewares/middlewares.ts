@@ -17,5 +17,4 @@ export const cache = (options: CacheOptions = {}) => {
 
 export const middleware: RequestHandler = (req, res) => {
   res.send("Hello World!");
-  console.log("Response sent");
 };
