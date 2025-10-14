@@ -3,17 +3,18 @@
   // "typeRoots": ["./src/shared", "./node_modules/@types"],
   "compilerOptions": {
     "target": "ES2022",
-    "module": "Node16",
-    "moduleResolution": "Node16",
+    "module": "es2015",
+    "moduleResolution": "bundler",
     "outDir": "./dist/",
-    "rootDir": "./",
+    "rootDir": "./src/",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
-    "lib": ["es5", "es6", "dom", "dom.iterable"]
+    "lib": ["es5", "es6", "dom", "dom.iterable"],
+    "paths": {
+      // Define path aliases
+      "#*": ["./src/*"]
+    }
   },
   "include": ["**/*.ts"],
   "exclude": ["dist"]

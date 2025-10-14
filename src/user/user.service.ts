@@ -1,8 +1,8 @@
-import db from "#database/db.ts";
-import { ICount } from "#shared/shared.types.ts";
-import { ResultSetHeader } from "mysql2/promise";
+import type { IUser } from "#user/user.types.js";
 
-import { IUser } from "./user.types.ts";
+import db from "#database/db.js";
+import { ICount } from "#shared/shared.types.js";
+import { ResultSetHeader } from "mysql2/promise";
 
 export class UserService {
   async getByEmail(email: string) {
@@ -32,7 +32,8 @@ export class UserService {
         LEFT JOIN users_icon ON users.id = users_icon.id_user
         LEFT JOIN users_online ON users.id = users_online.id_user
         WHERE users.id = ?
-        GROUP BY users.id`,
+        ORDER BY seasonId DESC
+        LIMIT 1`,
       [userId],
     )) as IUser[];
 

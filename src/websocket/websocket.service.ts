@@ -1,4 +1,4 @@
-import { singleton } from "#utils/singleton.ts";
+import { singleton } from "#utils/singleton.js";
 import { Server } from "http";
 import { WebSocket, WebSocketServer } from "ws";
 

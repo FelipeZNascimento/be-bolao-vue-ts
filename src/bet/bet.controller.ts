@@ -1,16 +1,16 @@
-import { BetService } from "#bet/bet.service.ts";
-import { MatchService } from "#match/match.service.ts";
-import { BaseController } from "#shared/base.controller.ts";
-import { TeamService } from "#team/team.service.ts";
-import { ITeam } from "#team/team.types.ts";
-import { getFromCacheOrFetch } from "#team/team.util.ts";
-import { UserService } from "#user/user.service.ts";
-import { AppError } from "#utils/appError.ts";
-import { ErrorCode } from "#utils/errorCodes.ts";
-import { NextFunction, Request, Response } from "express";
+import type { IExtraBet } from "#bet/bet.types.js";
+import type { ITeam } from "#team/team.types.js";
 
-import { IExtraBet } from "./bet.types.ts";
-import { processExtraBets } from "./bet.utils.ts";
+import { BetService } from "#bet/bet.service.js";
+import { processExtraBets } from "#bet/bet.utils.js";
+import { MatchService } from "#match/match.service.js";
+import { BaseController } from "#shared/base.controller.js";
+import { TeamService } from "#team/team.service.js";
+import { getFromCacheOrFetch } from "#team/team.util.js";
+import { UserService } from "#user/user.service.js";
+import { AppError } from "#utils/appError.js";
+import { ErrorCode } from "#utils/errorCodes.js";
+import { NextFunction, Request, Response } from "express";
 
 export class BetController extends BaseController {
   constructor(
@@ -70,18 +70,20 @@ export class BetController extends BaseController {
         throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
-      console.log("Fetching extras results for season", season, "and seasonStart", seasonStart);
-      const extraBetsResults: IExtraBet = await this.betService.getExtrasResults(
+      const extraBetsResults: IExtraBet[] | undefined = await this.betService.getExtrasResults(
         parseInt(season),
         parseInt(seasonStart),
       );
       const teams: ITeam[] = await getFromCacheOrFetch(this.teamService);
 
-      // return extraBetsResults.map((bet) => ({
-      //   bets: processExtraBets(extraBetsResults.find((b) => b.idUser === bet.idUser)?.json ?? "", teams),
-      // }));
+      if (!extraBetsResults || extraBetsResults.length === 0) {
+        return {
+          bets: [],
+        };
+      }
+
       return {
-        bets: processExtraBets(extraBetsResults.json, teams),
+        bets: processExtraBets(extraBetsResults[0].json, teams),
       };
     });
   };

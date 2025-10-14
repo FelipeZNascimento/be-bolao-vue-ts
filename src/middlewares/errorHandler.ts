@@ -1,7 +1,7 @@
 // import { logger } from "@/config/logger";
-// import { MetricsService } from "@/services/metrics.service";
-import { ApiResponse } from "#utils/apiResponse.ts";
-import { AppError } from "#utils/appError.ts";
+// import { MetricsService } from "@/services/metrics.service.js";
+import { ApiResponse } from "#utils/apiResponse.js";
+import { AppError } from "#utils/appError.js";
 import { NextFunction, Request, Response } from "express";
 
 // const metricsService = new MetricsService();

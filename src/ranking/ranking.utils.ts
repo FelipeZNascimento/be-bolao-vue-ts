@@ -1,10 +1,10 @@
-import { IBet, IExtraBet } from "#bet/bet.types.ts";
-import { BET_VALUES, BetsValues, EXTRA_BETS_MAPPING, maxPointsPerBet } from "#bet/bet.utils.ts";
-import { IMatch } from "#match/match.types.ts";
-import { isMatchEnded } from "#match/match.utils.ts";
-import { IUser } from "#user/user.types.ts";
+import type { IBet, IExtraBet } from "#bet/bet.types.js";
+import type { IMatch } from "#match/match.types.js";
+import type { IRankingLine, IRawExtras } from "#ranking/ranking.types.js";
+import type { IUser } from "#user/user.types.js";
 
-import { IRankingLine, IRawExtras } from "./ranking.types.ts";
+import { BET_VALUES, BetsValues, EXTRA_BETS_MAPPING, maxPointsPerBet } from "#bet/bet.utils.js";
+import { isMatchEnded } from "#match/match.utils.js";
 /**
  * buildWeeklyUserRanking - Builds the weekly ranking.
  *
@@ -69,7 +69,7 @@ export const buildSeasonUserRanking = (
   matches: IMatch[],
   bets: IBet[],
   extras: IExtraBet[],
-  extrasResults: IExtraBet | null,
+  extrasResults: IExtraBet | null | undefined,
   totalPossiblePoints: number,
 ) => {
   const ranking = users
@@ -248,7 +248,7 @@ const calculateBetReward = (match: IMatch, betValue: BetsValues, maxPoints: numb
  *
  * @return: The maximum points for the user in that set of matches, in that season.
  */
-const calculateExtrasReward = (user: IUser, extras: IExtraBet[], extrasResults: IExtraBet | null) => {
+const calculateExtrasReward = (user: IUser, extras: IExtraBet[], extrasResults: IExtraBet | null | undefined) => {
   // return 0;
 
   if (extras.length === 0 || !extrasResults) {

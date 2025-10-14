@@ -1,4 +1,4 @@
-import db from "#database/db.ts";
+import db from "#database/db.js";
 
 export class SeasonService {
   async getInfo(season: number) {

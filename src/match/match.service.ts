@@ -1,9 +1,9 @@
-import db from "#database/db.ts";
-import { ICount } from "#shared/shared.types.ts";
-import { ResultSetHeader } from "mysql2/promise";
+import type { IMatch, IWeek } from "#match/match.types.js";
+import type { ICount } from "#shared/shared.types.js";
 
-import { MatchStatus } from "./match.constants.ts";
-import { IMatch, IWeek } from "./match.types.ts";
+import db from "#database/db.js";
+import { MatchStatus } from "#match/match.constants.js";
+import { ResultSetHeader } from "mysql2/promise";
 
 export class MatchService {
   async getBySeason(season: number) {

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ErrorCode } from "../utils/errorCodes.ts";
+import { ErrorCode } from "#utils/errorCodes.js";
 
 export class ErrorHandler extends Error {
   public readonly code: ErrorCode;

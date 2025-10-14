@@ -1,21 +1,22 @@
-import { BetService } from "#bet/bet.service.ts";
-import { IBet } from "#bet/bet.types.ts";
-import { MatchService } from "#match/match.service.ts";
-import { BaseController } from "#shared/base.controller.ts";
-import { TeamService } from "#team/team.service.ts";
-import { ITeam } from "#team/team.types.ts";
-import { getFromCacheOrFetch, setTeamsCache } from "#team/team.util.ts";
-import { UserService } from "#user/user.service.ts";
-import { isFulfilled, isRejected } from "#utils/apiResponse.ts";
-import { AppError } from "#utils/appError.ts";
-import { CACHE_KEYS, cachedInfo } from "#utils/dataCache.ts";
-import { ErrorCode } from "#utils/errorCodes.ts";
-import { WebSocketService } from "#websocket/websocket.service.ts";
-import { NextFunction, Request, Response } from "express";
+import type { IBet } from "#bet/bet.types.js";
+import type { IMatch } from "#match/match.types.js";
+import type { ITeam } from "#team/team.types.js";
 
-import { MATCH_STATUS, MatchStatus } from "./match.constants.ts";
-import { IMatch } from "./match.types.ts";
-import { parseQueryResponse } from "./match.utils.ts";
+import { BetService } from "#bet/bet.service.js";
+import { MATCH_STATUS, MatchStatus } from "#match/match.constants.js";
+import { MatchService } from "#match/match.service.js";
+import { mergeBetsToMatches } from "#match/match.utils.js";
+import { RankingController } from "#ranking/ranking.controller.js";
+import { BaseController } from "#shared/base.controller.js";
+import { TeamService } from "#team/team.service.js";
+import { getFromCacheOrFetch, setTeamsCache } from "#team/team.util.js";
+import { UserService } from "#user/user.service.js";
+import { isFulfilled, isRejected } from "#utils/apiResponse.js";
+import { AppError } from "#utils/appError.js";
+import { CACHE_KEYS, cachedInfo } from "#utils/dataCache.js";
+import { ErrorCode } from "#utils/errorCodes.js";
+import { WebSocketService } from "#websocket/websocket.service.js";
+import { NextFunction, Request, Response } from "express";
 
 export class MatchController extends BaseController {
   constructor(
@@ -72,57 +73,17 @@ export class MatchController extends BaseController {
       if (user) {
         userBets = isFulfilled(userBetsResponse) ? userBetsResponse.value : [];
       }
-
-      const matchesObject = matchesResponse.map((match) => {
-        const user = req.session.user;
-        let loggedUserBetsObject = null;
-
-        if (user) {
-          loggedUserBetsObject = userBets
-            .filter((bet) => bet.matchId === match.id && bet.userId === user.id)
-            .map((bet) => ({
-              id: bet.id,
-              matchId: bet.matchId,
-              user: {
-                color: bet.userColor,
-                icon: bet.userIcon,
-                id: bet.userId,
-                name: bet.userName,
-              },
-              value: bet.betValue,
-            }))[0];
-        }
-
-        const allBetsObject = startedMatchesBets
-          .filter((bet) => bet.matchId === match.id && bet.userId !== user?.id)
-          .sort((a, b) => a.userName.localeCompare(b.userName))
-          .map((bet) => ({
-            id: bet.id,
-            matchId: bet.matchId,
-            user: {
-              color: bet.userColor,
-              icon: bet.userIcon,
-              id: bet.userId,
-              name: bet.userName,
-            },
-            value: bet.betValue,
-          }));
-
-        const awayTeam = teams.find((team) => team.id === match.idTeamAway);
-        const homeTeam = teams.find((team) => team.id === match.idTeamHome);
-
-        if (!awayTeam || !homeTeam) {
-          throw new AppError("Equipe não encontrada", 400, ErrorCode.MISSING_REQUIRED_FIELD);
-        }
-
-        const parsedResponse = parseQueryResponse(match, homeTeam, awayTeam);
-
-        return {
-          ...parsedResponse,
-          bets: allBetsObject,
-          loggedUserBets: loggedUserBetsObject,
-        };
-      });
+      let matchesObject = [];
+      try {
+        matchesObject = mergeBetsToMatches(teams, matchesResponse, startedMatchesBets, userBets, user?.id);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+        throw new AppError(
+          `Erro ao mesclar apostas com partidas: ${errorMessage}`,
+          500,
+          ErrorCode.INTERNAL_SERVER_ERROR,
+        );
+      }
 
       return {
         matches: matchesObject,
@@ -134,11 +95,12 @@ export class MatchController extends BaseController {
 
   updateFromKey = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      const teams: ITeam[] = await getFromCacheOrFetch(this.teamService);
       const season = process.env.SEASON;
+      const seasonStart = process.env.SEASON_START;
+      const teams: ITeam[] = await getFromCacheOrFetch(this.teamService);
       let updateResponse;
 
-      if (!season) {
+      if (!season || !seasonStart) {
         throw new AppError("Erro de inicialização", 404, ErrorCode.INTERNAL_SERVER_ERROR);
       }
 
@@ -227,8 +189,8 @@ export class MatchController extends BaseController {
           awayPoints,
           homePoints,
           status,
-          possession,
-          clock,
+          possession ?? null,
+          clock ?? null,
           awayTeamCode,
           homeTeamCode,
           week,
@@ -238,22 +200,33 @@ export class MatchController extends BaseController {
         throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
-      if (updateResponse.affectedRows === 0) {
-        const season = process.env.SEASON;
-        const week = cachedInfo.get<number>(CACHE_KEYS.CURRENT_WEEK);
-        if (season && week) {
-          const updatedMatches = await this.matchService.getBySeasonWeek(parseInt(season), week);
-          const parsedMatches = updatedMatches.map((match) => {
-            const awayTeam = teams.find((team) => team.id === match.idTeamAway);
-            const homeTeam = teams.find((team) => team.id === match.idTeamHome);
+      // If any match was updated, we need to update ranking and send websocket message
+      if (updateResponse.affectedRows > 0) {
+        const rankingController = new RankingController(
+          this.userService,
+          this.matchService,
+          this.teamService,
+          this.betService,
+        );
 
-            if (!awayTeam || !homeTeam) {
-              throw new AppError("Equipe não encontrada", 400, ErrorCode.MISSING_REQUIRED_FIELD);
-            }
+        // Update ranking
+        const { seasonRanking, weeklyRanking } = await rankingController.calculateRanking(
+          parseInt(season),
+          parseInt(seasonStart),
+        );
 
-            return parseQueryResponse(match, homeTeam, awayTeam);
-          });
-          this.websocketInstance.broadcast(JSON.stringify(parsedMatches));
+        const currentWeek = cachedInfo.get<number>(CACHE_KEYS.CURRENT_WEEK);
+        // Fetch updated matches for the week
+        if (season && currentWeek) {
+          const updatedMatches = await this.matchService.getBySeasonWeek(parseInt(season), currentWeek);
+          const matchesIds = updatedMatches.map((match) => match.id);
+          const startedMatchesBets = await this.betService.getStartedMatchesBetsByMatchIds(matchesIds);
+          const user = req.session.user ?? null;
+
+          const matchesObject = mergeBetsToMatches(teams, updatedMatches, startedMatchesBets, [], user?.id);
+          this.websocketInstance.broadcast(
+            JSON.stringify({ matches: matchesObject, ranking: { seasonRanking, weeklyRanking }, week: week }),
+          );
         }
       }
       return updateResponse;

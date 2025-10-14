@@ -1,11 +1,12 @@
-import app from "#app.ts";
-import { connection } from "#database/db.ts";
-import { WebSocketService } from "#websocket/websocket.service.ts";
+// import { connection } from "#database/db.js";
+import { WebSocketService } from "#websocket/websocket.service.js";
+
+import app from "./app.js";
 
 const port = process.env.PORT ?? "9001";
 
 const server = app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+  console.log(`BolaoNFL API listening on port ${port}`);
 });
 
 WebSocketService.getInstance(server);
@@ -31,7 +32,7 @@ const shutdown = () => {
     console.info("HTTP server closed");
 
     try {
-      connection.destroy();
+      // connection.destroy();
       console.info("Database connections closed");
 
       process.exit(0);
