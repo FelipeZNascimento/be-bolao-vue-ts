@@ -1,8 +1,0 @@
-### FETCH EXTRA BETS FOR CURRENT SEASON IF SEASON HAS STARTED
-POST http://localhost:3000/bolaonfl/bet/update
-content-type: application/json
-
-{
-    "betValue": 1,
-    "matchId": 4475
-}
