@@ -27,13 +27,23 @@ jobs:
       - name: 🔨 Build Project
         run: npm run build
 
-      - name: 📂 Sync files to prod folder
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+      - name: 📂 Sync files to prod folder (NEW)
+        uses: Dylan700/sftp-upload-action@latest
         with:
           server: ${{ secrets.server }}
           username: ${{ secrets.username }}
-          password: ${{ secrets.password }}
-          local-dir: ./
-          server-dir: ./
-          protocol: ftps
+          password: ${{secrets.password}}
           port: 22
+          uploads: |
+            ./dist/ => ./
+
+      # - name: 📂 Sync files to prod folder
+      #   uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+      #   with:
+      #     server: ${{ secrets.server }}
+      #     username: ${{ secrets.username }}
+      #     password: ${{ secrets.password }}
+      #     local-dir: ./
+      #     server-dir: ./
+      #     protocol: ftps
+      #     port: 22
