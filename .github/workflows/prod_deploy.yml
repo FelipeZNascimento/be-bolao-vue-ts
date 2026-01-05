@@ -28,7 +28,7 @@ jobs:
         run: npm run build
 
       - name: 📂 Sync files to prod folder
-        uses: SamKirkland/FTP-Deploy-Action@4.3.5
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server: ${{ secrets.server }}
           username: ${{ secrets.username }}
