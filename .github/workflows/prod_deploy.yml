@@ -1,8 +1,8 @@
-name: CI/CD Prod
+name: 🔨📂 Build & Deploy to PROD
 
 on:
   push:
-    branches: [master]
+    branches: [main]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -36,14 +36,3 @@ jobs:
           port: 22
           uploads: |
             ./dist/ => ./
-
-      # - name: 📂 Sync files to prod folder
-      #   uses: SamKirkland/FTP-Deploy-Action@v4.3.6
-      #   with:
-      #     server: ${{ secrets.server }}
-      #     username: ${{ secrets.username }}
-      #     password: ${{ secrets.password }}
-      #     local-dir: ./
-      #     server-dir: ./
-      #     protocol: ftps
-      #     port: 22
