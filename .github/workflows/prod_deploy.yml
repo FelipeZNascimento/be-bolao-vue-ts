@@ -27,6 +27,16 @@ jobs:
       - name: 🔨 Build Project
         run: npm run build
 
+      - name: SFTP upload
+        uses: Dylan700/sftp-upload-action@latest
+        with:
+          server: ${{ secrets.server }}
+          username: ${{ secrets.username }}
+          password: ${{secrets.password}}
+          port: 22
+          uploads: |
+            ./ => ./
+
       - name: 📂 Sync files to prod folder
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
