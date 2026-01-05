@@ -12,7 +12,7 @@
     "start": "node --env-file .env dist/src/index.js",
     "start:prod": "pm2 start \"node --env-file=.env index.js\" --watch",
     "build": "tsc -p tsconfig.build.json && tsc-alias",
-    "postbuild": "cp package.json dist/package.json && cp .env dist/.env",
+    "postbuild": "cp package.json dist/",
     "test": "vitest",
     "test:run": "vitest --run",
     "test:ui": "vitest --ui",
