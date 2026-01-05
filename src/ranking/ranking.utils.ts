@@ -22,17 +22,13 @@ export const buildWeeklyUserRanking = (
   totalPossiblePoints: number,
 ) => {
   const ranking = users
-    .map((user) => {
-      const rankingLine = calculateUserPoints(user, matches, bets, totalPossiblePoints);
-
-      return rankingLine;
-    })
+    .map((user) => calculateUserPoints(user, matches, bets, totalPossiblePoints))
     .sort(
       (a, b) =>
         b.score.total - a.score.total || b.score.bullseye - a.score.bullseye || a.user.name.localeCompare(b.user.name),
     );
-
   let position = 1;
+
   ranking.forEach((rankingLine, index) => {
     if (index === 0) {
       rankingLine.user.position = position;

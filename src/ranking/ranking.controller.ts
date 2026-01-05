@@ -61,11 +61,11 @@ export class RankingController extends BaseController {
     extrasResults: IExtraBet | null,
   ) => {
     const totalPossiblePoints: number = calculateMaxPoints(season, startedMatches);
-
     return buildSeasonUserRanking(users, startedMatches, bets, extras, extrasResults, totalPossiblePoints);
   };
 
   calculateWeeklyRanking = (weeklyRankingObj: IWeeklyRanking[], season: number, users: IUser[], bets: IBet[]) => {
+    const usersAccumulated = users.map((user) => ({ accumulatedPoints: 0, userId: user.id }));
     return weeklyRankingObj.map((weeklyMatches) => {
       const { matches, week } = weeklyMatches;
       const cacheKey = CACHE_KEYS.WEEKLY_RANKING.toString() + "_" + season.toString() + "_" + week.toString();
@@ -78,6 +78,13 @@ export class RankingController extends BaseController {
 
       const weeklyMaximumPoints = calculateMaxPoints(season, matches);
       const weeklyRanking = buildWeeklyUserRanking(users, matches, bets, weeklyMaximumPoints);
+      weeklyRanking.forEach((rankingLine) => {
+        const userAccumulated = usersAccumulated.find((u) => u.userId === rankingLine.user.id);
+        if (userAccumulated) {
+          userAccumulated.accumulatedPoints += rankingLine.score.total;
+          rankingLine.score.accumulatedPoints = userAccumulated.accumulatedPoints;
+        }
+      });
       const isLocked = isWeekLocked(matches) && matches.length === weeklyMatches.matchCount;
 
       if (isLocked) {
@@ -164,20 +171,20 @@ export class RankingController extends BaseController {
       week: number;
     }[] = [];
 
-    startedMatches.forEach((startedMatch) => {
-      const week = startedMatch.week;
+    matches.forEach((matchObj) => {
+      const week = matchObj.week;
       const existingWeek = weeklyRankingObj.find((w) => w.week === week);
       const matchCount = matches.filter((match) => match.week === week).length;
       if (existingWeek) {
-        existingWeek.matches.push(startedMatch);
+        existingWeek.matches.push(matchObj);
       } else {
-        weeklyRankingObj.push({ matchCount, matches: [startedMatch], ranking: [], week });
+        weeklyRankingObj.push({ matchCount, matches: [matchObj], ranking: [], week });
       }
 
-      matchIds.push(startedMatch.id);
+      matchIds.push(matchObj.id);
     });
 
-    const bets = await this.betService.getStartedMatchesBetsByMatchIds(matchIds);
+    const bets = await this.betService.getStartedMatchesBetsByMatchIds(startedMatches.map((m) => m.id));
 
     return {
       bets,

@@ -16,7 +16,7 @@ export class SeasonController extends BaseController {
 
       if (!currentWeek) {
         currentWeek = await this.matchService.getCurrentWeek();
-        cachedInfo.set(CACHE_KEYS.CURRENT_WEEK, currentWeek);
+        cachedInfo.set(CACHE_KEYS.CURRENT_WEEK, currentWeek, 60 * 60 * 4); // Cache for 4 hours
       }
 
       return {

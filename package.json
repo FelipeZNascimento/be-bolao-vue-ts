@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "tsx --watch --env-file .env src/index.ts",
     "start": "node --env-file .env dist/src/index.js",
-    "start:prod": "pm2 start \"node --env-file=.env index.js\"",
+    "start:prod": "pm2 start \"node --env-file=.env index.js\" --watch",
     "build": "tsc -p tsconfig.build.json && tsc-alias",
     "postbuild": "cp package.json dist/package.json && cp .env dist/.env",
     "test": "vitest",

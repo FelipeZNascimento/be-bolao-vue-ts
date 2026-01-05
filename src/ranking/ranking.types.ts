@@ -10,6 +10,8 @@ export interface IRankingLine {
 }
 
 export interface IRankingScore {
+  accumulatedPoints?: number;
+  accumulatedPosition?: number;
   bullseye: number;
   extras: number;
   percentage: string;

@@ -141,16 +141,12 @@ export class MatchController extends BaseController {
 
       if (homeWinLosses) {
         const homeTeamIndex = teams.findIndex((team) => team.code === homeTeamCode);
-        if (homeTeamIndex !== -1) {
-          teams[homeTeamIndex].homeWinLosses = homeWinLosses;
-        }
+        teams[homeTeamIndex].winLosses = homeTeamIndex !== -1 ? homeWinLosses : null;
       }
 
       if (awayWinLosses) {
         const awayTeamIndex = teams.findIndex((team) => team.code === awayTeamCode);
-        if (awayTeamIndex !== -1) {
-          teams[awayTeamIndex].awayWinLosses = awayWinLosses;
-        }
+        teams[awayTeamIndex].winLosses = awayTeamIndex !== -1 ? awayWinLosses : null;
       }
 
       if (awayWinLosses || homeWinLosses) {
