@@ -82,9 +82,7 @@ export class BetController extends BaseController {
         };
       }
 
-      return {
-        bets: processExtraBets(extraBetsResults[0].json, teams),
-      };
+      return processExtraBets(extraBetsResults[0].json, teams);
     });
   };
 
