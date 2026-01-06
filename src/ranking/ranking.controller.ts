@@ -11,6 +11,7 @@ import {
   buildWeeklyUserRanking,
   calculateMaxPoints,
   isWeekLocked,
+  sortRankingLine,
 } from "#ranking/ranking.utils.js";
 import { BaseController } from "#shared/base.controller.js";
 import { TeamService } from "#team/team.service.js";
@@ -65,36 +66,83 @@ export class RankingController extends BaseController {
   };
 
   calculateWeeklyRanking = (weeklyRankingObj: IWeeklyRanking[], season: number, users: IUser[], bets: IBet[]) => {
-    const usersAccumulated = users.map((user) => ({ accumulatedPoints: 0, userId: user.id }));
+    let lastWeekReturnedFromCache: null | string = null;
+    const usersAccumulated = users.map((user) => ({ accumulatedBullseye: 0, accumulatedPoints: 0, userId: user.id }));
     return weeklyRankingObj.map((weeklyMatches) => {
       const { matches, week } = weeklyMatches;
       const cacheKey = CACHE_KEYS.WEEKLY_RANKING.toString() + "_" + season.toString() + "_" + week.toString();
-      const cachedRanking = cachedInfo.get<IRankingLine[]>(cacheKey);
+      let cachedRanking = cachedInfo.get<IRankingLine[]>(cacheKey);
 
       if (cachedRanking) {
         console.log("Returning cached ranking for ", cacheKey);
+        lastWeekReturnedFromCache = cacheKey;
         return { isLocked: true, ranking: cachedRanking, week: weeklyMatches.week };
+      } else if (lastWeekReturnedFromCache) {
+        // if previous week was returned from cache, usersAccumulated is empty. We need to start accumulating from last last cached week.
+        cachedRanking = cachedInfo.get<IRankingLine[]>(lastWeekReturnedFromCache);
       }
 
       const weeklyMaximumPoints = calculateMaxPoints(season, matches);
       const weeklyRanking = buildWeeklyUserRanking(users, matches, bets, weeklyMaximumPoints);
       weeklyRanking.forEach((rankingLine) => {
         const userAccumulated = usersAccumulated.find((u) => u.userId === rankingLine.user.id);
+
         if (userAccumulated) {
+          // If there's a cached ranking, we need to take it into account for accumulating points
+          if (cachedRanking) {
+            const cachedUserRanking = cachedRanking.find(
+              (cachedRankingLine) => cachedRankingLine.user.id === rankingLine.user.id,
+            );
+            if (cachedUserRanking) {
+              userAccumulated.accumulatedPoints = cachedUserRanking.score.accumulatedPoints;
+              userAccumulated.accumulatedBullseye = cachedUserRanking.score.accumulatedBullseye;
+            }
+          }
           userAccumulated.accumulatedPoints += rankingLine.score.total;
+          userAccumulated.accumulatedBullseye += rankingLine.score.bullseye;
           rankingLine.score.accumulatedPoints = userAccumulated.accumulatedPoints;
+          rankingLine.score.accumulatedBullseye = userAccumulated.accumulatedBullseye;
         }
       });
+
+      let position = 1;
+
+      const sortedByAccumulatedWeeklyRanking = weeklyRanking.sort(
+        (a, b) =>
+          b.score.accumulatedPoints - a.score.accumulatedPoints ||
+          b.score.accumulatedBullseye - a.score.accumulatedBullseye,
+      );
+
+      sortedByAccumulatedWeeklyRanking.forEach((rankingLine, index) => {
+        if (index === 0) {
+          rankingLine.score.accumulatedPosition = position;
+        } else {
+          if (
+            rankingLine.score.accumulatedPoints ===
+              sortedByAccumulatedWeeklyRanking[index - 1].score.accumulatedPoints &&
+            rankingLine.score.accumulatedBullseye ===
+              sortedByAccumulatedWeeklyRanking[index - 1].score.accumulatedBullseye
+          ) {
+            rankingLine.score.accumulatedPosition =
+              sortedByAccumulatedWeeklyRanking[index - 1].score.accumulatedPosition;
+          } else {
+            rankingLine.score.accumulatedPosition = position;
+          }
+        }
+        position++;
+      });
+
+      const sortedWeeklyRanking = sortRankingLine(sortedByAccumulatedWeeklyRanking);
       const isLocked = isWeekLocked(matches) && matches.length === weeklyMatches.matchCount;
 
       if (isLocked) {
         console.log("Caching ranking for ", cacheKey);
-        cachedInfo.set(cacheKey, weeklyRanking);
+        cachedInfo.set(cacheKey, sortedWeeklyRanking);
       }
 
       return {
         isLocked,
-        ranking: weeklyRanking,
+        ranking: sortedWeeklyRanking,
         week: weeklyMatches.week,
       };
     });
