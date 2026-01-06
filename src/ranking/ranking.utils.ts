@@ -6,6 +6,20 @@ import type { IUser } from "#user/user.types.js";
 import { BET_VALUES, BetsValues, EXTRA_BETS_MAPPING, maxPointsPerBet } from "#bet/bet.utils.js";
 import { isMatchEnded } from "#match/match.utils.js";
 /**
+ * sortRankingLine - Sorts ranking by points, bullseye and name and returns it
+ *
+ * @users: All users to include in the ranking.
+ *
+ * @return: The sorted ranking.
+ */
+export const sortRankingLine = (rankingLine: IRankingLine[]) => {
+  return rankingLine.sort(
+    (a, b) =>
+      b.score.total - a.score.total || b.score.bullseye - a.score.bullseye || a.user.name.localeCompare(b.user.name),
+  );
+};
+
+/**
  * buildWeeklyUserRanking - Builds the weekly ranking.
  *
  * @users: All users to include in the ranking.
@@ -21,23 +35,19 @@ export const buildWeeklyUserRanking = (
   bets: IBet[],
   totalPossiblePoints: number,
 ) => {
-  const ranking = users
-    .map((user) => calculateUserPoints(user, matches, bets, totalPossiblePoints))
-    .sort(
-      (a, b) =>
-        b.score.total - a.score.total || b.score.bullseye - a.score.bullseye || a.user.name.localeCompare(b.user.name),
-    );
+  const ranking = users.map((user) => calculateUserPoints(user, matches, bets, totalPossiblePoints));
+  const sortedRanking = sortRankingLine(ranking);
   let position = 1;
 
-  ranking.forEach((rankingLine, index) => {
+  sortedRanking.forEach((rankingLine, index) => {
     if (index === 0) {
       rankingLine.user.position = position;
     } else {
       if (
-        rankingLine.score.total === ranking[index - 1].score.total &&
-        rankingLine.score.bullseye === ranking[index - 1].score.bullseye
+        rankingLine.score.total === sortedRanking[index - 1].score.total &&
+        rankingLine.score.bullseye === sortedRanking[index - 1].score.bullseye
       ) {
-        rankingLine.user.position = ranking[index - 1].user.position;
+        rankingLine.user.position = sortedRanking[index - 1].user.position;
       } else {
         rankingLine.user.position = position;
       }
@@ -45,7 +55,7 @@ export const buildWeeklyUserRanking = (
     position++;
   });
 
-  return ranking;
+  return sortedRanking;
 };
 
 /**
@@ -157,6 +167,9 @@ const calculateUserPoints = (user: IUser, matches: IMatch[], bets: IBet[], total
     betsCount,
     matchesCount: matches.length,
     score: {
+      accumulatedBullseye: 0,
+      accumulatedPoints: 0,
+      accumulatedPosition: 1,
       bullseye: bullseyeCount,
       extras: 0,
       percentage: totalPercentage.toFixed(1),
