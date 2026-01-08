@@ -51,7 +51,7 @@
     "express-session": "^1.18.2",
     "mysql2": "^3.14.3",
     "node-cache": "^5.1.2",
-    "nodemailer": "^7.0.6",
+    "nodemailer": "^7.0.11",
     "websocket-express": "^4.0.1",
     "ws": "^8.18.3",
     "zod": "^4.1.8"
