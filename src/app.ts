@@ -76,14 +76,13 @@ const corsOptions = {
 };
 app.use(express.json());
 app.use(cors(corsOptions));
+
 app.use("/bolaonflv2/season", seasonRoutes);
 app.use("/bolaonflv2/bet", betRoutes);
 app.use("/bolaonflv2/ranking", rankingRoutes);
 app.use("/bolaonflv2/user", userRoutes);
 app.use("/bolaonflv2/match", matchRoutes);
 app.use("/bolaonflv2/team", cache(), teamRoutes);
-
-// app.options("*", cors());
 
 app.get("/", [middleware]);
 
