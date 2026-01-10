@@ -139,9 +139,17 @@ export class MatchController extends BaseController {
         week,
       } = reqBody;
 
+      console.log("----------reqBody----------");
+      console.log(reqBody);
+      console.log("----------reqBody----------");
+
       if (homeWinLosses) {
         const homeTeamIndex = teams.findIndex((team) => team.code === homeTeamCode);
+        console.log("----------homeWinLosses----------");
+        console.log(teams[homeTeamIndex]);
         teams[homeTeamIndex].winLosses = homeTeamIndex !== -1 ? homeWinLosses : null;
+        console.log(teams[homeTeamIndex]);
+        console.log("----------homeWinLosses----------");
       }
 
       if (awayWinLosses) {
