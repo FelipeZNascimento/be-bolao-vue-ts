@@ -49,9 +49,9 @@
     "express": "^5.1.0",
     "express-mysql-session": "^3.0.3",
     "express-session": "^1.18.2",
-    "mysql2": "^3.14.3",
+    "mysql2": "^3.16.0",
     "node-cache": "^5.1.2",
-    "nodemailer": "^7.0.6",
+    "nodemailer": "^7.0.12",
     "websocket-express": "^4.0.1",
     "ws": "^8.18.3",
     "zod": "^4.1.8"
@@ -74,7 +74,7 @@
     "lint-staged": "^16.1.5",
     "prettier": "^3.6.2",
     "tsc-alias": "^1.8.16",
-    "tsx": "^4.20.5",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.41.0",
     "vitest": "^3.2.4"
