@@ -28,6 +28,10 @@ jobs:
 
       - name: Install Dependencies
         run: pnpm i --frozen-lockfile
+
+      - name: 🔨 Build Project
+        run: pnpm run build
+
       - id: deployProd
         name: 📂 Sync files to prod folder
         continue-on-error: true
