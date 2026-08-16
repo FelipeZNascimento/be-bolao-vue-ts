@@ -44,13 +44,13 @@ export class MatchController extends BaseController {
       const season = req.params.season || process.env.SEASON;
       let week: number | undefined = parseInt(req.params.week) || cachedInfo.get(CACHE_KEYS.CURRENT_WEEK);
 
-      if (!week || isNaN(week)) {
+      if (week === undefined || isNaN(week)) {
         const currentWeek = await this.matchService.getCurrentWeek();
         cachedInfo.set(CACHE_KEYS.CURRENT_WEEK, currentWeek);
         week = currentWeek;
       }
 
-      if (!season || !week) {
+      if (!season || isNaN(week)) {
         throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
