@@ -13,21 +13,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🚚 Checkout repository
-        uses: actions/checkout@v4
+      - name: 🚚 Checkout code
+        uses: actions/checkout@v7
 
-      - name: Set up Node.js from package.json
-        uses: actions/setup-node@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
         with:
           node-version-file: package.json
-          cache: "npm"
+          cache: "pnpm"
 
-      - name: Install dependencies
-        run: pnpm ci
-
-      - name: 🔨 Build Project
-        run: pnpm run build
-
+      - name: Install Dependencies
+        run: pnpm i --frozen-lockfile
       - id: deployProd
         name: 📂 Sync files to prod folder
         continue-on-error: true
