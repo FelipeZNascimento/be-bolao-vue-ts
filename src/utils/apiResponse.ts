@@ -10,7 +10,7 @@ export const ApiResponse = {
     });
   },
 
-  success(res: Response, data: any = null, message = "Success"): void {
+  success(res: Response, data: unknown = null, message = "Success"): void {
     res.status(200).json({
       data,
       message,

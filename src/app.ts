@@ -35,7 +35,6 @@ const sessionSettings: ISessionSettings = {
   secret: sessionSecret,
   user: undefined,
 };
-// @ts-expect-error Types are correct, but check is failing
 const expressStore = mySqlSession(expressSession);
 // @ts-expect-error Types are correct, but check is failing
 const sessionStore = new expressStore(config.db, connection);
@@ -82,8 +81,6 @@ app.use("/bolaonflv2/ranking", rankingRoutes);
 app.use("/bolaonflv2/user", userRoutes);
 app.use("/bolaonflv2/match", matchRoutes);
 app.use("/bolaonflv2/team", cache(), teamRoutes);
-
-// app.options("*", cors());
 
 app.get("/", [middleware]);
 

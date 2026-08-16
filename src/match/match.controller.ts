@@ -29,7 +29,11 @@ export class MatchController extends BaseController {
     super();
   }
 
-  getBySeasonWeek = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getBySeasonWeek = async (
+    req: Request<{ season: string; week: string }>,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       let user = null;
       if (req.session.user) {

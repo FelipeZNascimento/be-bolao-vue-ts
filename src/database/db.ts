@@ -23,7 +23,7 @@ connection.on("release", function (connection) {
   console.log("Connection %d released", connection.threadId);
 });
 
-async function query(sql: string, params: any) {
+async function query(sql: string, params: mysql.QueryValues) {
   const [results] = await connection.query(sql, params);
   return results;
 }

@@ -16,7 +16,7 @@ export abstract class BaseController {
     }
   }
 
-  protected handleRequestFromCache(req: Request, res: Response, next: NextFunction, value: any): void {
+  protected handleRequestFromCache(req: Request, res: Response, next: NextFunction, value: unknown): void {
     try {
       ApiResponse.success(res, value);
     } catch (error) {

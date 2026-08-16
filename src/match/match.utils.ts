@@ -19,6 +19,7 @@ export const parseQueryResponse = (match: IMatch, homeTeam: ITeam, awayTeam: ITe
       name: awayTeam.name,
       possession: match.possession === "away",
       score: match.awayScore,
+      winLosses: awayTeam.winLosses ?? "",
     },
     clock: match.clock,
     home: {
@@ -30,6 +31,7 @@ export const parseQueryResponse = (match: IMatch, homeTeam: ITeam, awayTeam: ITe
       name: homeTeam.name,
       possession: match.possession === "home",
       score: match.homeScore,
+      winLosses: homeTeam.winLosses ?? "",
     },
     homeTeamOdds: match.homeTeamOdds,
     id: match.id,
