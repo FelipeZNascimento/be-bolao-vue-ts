@@ -28,12 +28,25 @@ jobs:
       - name: 🔨 Build Project
         run: pnpm run build
 
-      - name: 📂 Sync files to prod folder (NEW)
-        uses: Dylan700/sftp-upload-action@latest
+      - id: deployProd
+        name: 📂 Sync files to prod folder
+        continue-on-error: true
+        uses: wangyucode/sftp-upload-action@v3
         with:
-          server: ${{ secrets.server }}
+          host: ${{ secrets.server }}
           username: ${{ secrets.username }}
           password: ${{secrets.password}}
+          localDir: "./dist/"
+          remoteDir: "./"
           port: 22
-          uploads: |
-            ./dist/ => ./
+
+      - name: 🔁 Retry PROD upload if handshake failed
+        if: steps.deployProd.outcome == 'failure'
+        uses: wangyucode/sftp-upload-action@v3
+        with:
+          host: ${{ secrets.server }}
+          username: ${{ secrets.username }}
+          password: ${{secrets.password}}
+          localDir: "./dist/"
+          remoteDir: "./"
+          port: 22
