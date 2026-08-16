@@ -50,8 +50,8 @@ vi.mock("#utils/apiResponse.js", () => ({
     error: vi.fn(),
     success: vi.fn(),
   },
-  isFulfilled: vi.fn((result: PromiseSettledResult<any>) => result.status === "fulfilled"),
-  isRejected: vi.fn((result: PromiseSettledResult<any>) => result.status === "rejected"),
+  isFulfilled: vi.fn((result: PromiseSettledResult<unknown>) => result.status === "fulfilled"),
+  isRejected: vi.fn((result: PromiseSettledResult<unknown>) => result.status === "rejected"),
 }));
 
 const mockUser: IUser = {
@@ -66,7 +66,7 @@ const mockUser: IUser = {
   timestamp: 123456789,
 };
 
-function getMockReqResSession(user: IUser | null = null) {
+function getMockReqResSession<P extends Record<string, string> = Record<string, string>>(user: IUser | null = null) {
   const session = {
     regenerate: vi.fn((cb?: () => void) => {
       if (cb) cb();
@@ -78,7 +78,7 @@ function getMockReqResSession(user: IUser | null = null) {
   };
   return {
     next: vi.fn(),
-    req: { body: {}, params: {}, session } as unknown as Request,
+    req: { body: {}, params: {} as P, session } as unknown as Request<P>,
     res: {} as unknown as Response,
   };
 }
@@ -148,7 +148,7 @@ describe("UserController", () => {
 
   it("getById: should throw if season is missing", async () => {
     delete process.env.SEASON;
-    const { next, req, res } = getMockReqResSession();
+    const { next, req, res } = getMockReqResSession<{ userId: string }>();
 
     await controller.getById(req, res, next);
     expect(next).toHaveBeenCalledWith(expect.any(AppError));
@@ -156,8 +156,8 @@ describe("UserController", () => {
 
   it("getById: should return users by season if userId is missing", async () => {
     mockUserService.getBySeason.mockResolvedValue([{ id: 1 }]);
-    const { next, req, res } = getMockReqResSession();
-    req.params = {};
+    const { next, req, res } = getMockReqResSession<{ userId: string }>();
+    req.params = {} as unknown as { userId: string };
 
     await controller.getById(req, res, next);
     expect(mockUserService.getBySeason).toHaveBeenCalledWith(2024);
@@ -165,7 +165,7 @@ describe("UserController", () => {
 
   it("getById: should return user by id", async () => {
     mockUserService.getById.mockResolvedValue({ id: 2 });
-    const { next, req, res } = getMockReqResSession();
+    const { next, req, res } = getMockReqResSession<{ userId: string }>();
     req.params = { userId: "2" };
 
     await controller.getById(req, res, next);
@@ -209,7 +209,7 @@ describe("UserController", () => {
   });
 
   it("register: should throw if required fields are missing", async () => {
-    const { next, req, res } = getMockReqResSession();
+    const { next, req, res } = getMockReqResSession<{ season: string }>();
     req.body = {};
 
     await controller.register(req, res, next);
@@ -217,18 +217,18 @@ describe("UserController", () => {
   });
 
   it("register: should throw if checkExistingEntries returns false", async () => {
-    const { next, req, res } = getMockReqResSession();
+    const { next, req, res } = getMockReqResSession<{ season: string }>();
     req.body = { color: "col", email: "a", fullName: "d", icon: "i", name: "c", password: "b" };
-    vi.mocked(checkExistingEntries).mockResolvedValue(false);
+    (checkExistingEntries as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(false);
 
     await controller.register(req, res, next);
     expect(next).toHaveBeenCalledWith(expect.any(AppError));
   });
 
   it("register: should throw if registerResponse.affectedRows is 0", async () => {
-    const { next, req, res } = getMockReqResSession();
+    const { next, req, res } = getMockReqResSession<{ season: string }>();
     req.body = { color: "col", email: "a", fullName: "d", icon: "i", name: "c", password: "b" };
-    vi.mocked(checkExistingEntries).mockResolvedValue(true);
+    (checkExistingEntries as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(true);
     mockUserService.register.mockResolvedValue({ affectedRows: 0 });
 
     await controller.register(req, res, next);
@@ -302,7 +302,7 @@ describe("UserController", () => {
   it("updateProfile: should throw if email is invalid", async () => {
     const { next, req, res } = getMockReqResSession(mockUser);
     req.body = { email: "invalid", name: "n", username: "u" };
-    vi.mocked(validateEmail).mockReturnValue(false);
+    (validateEmail as unknown as ReturnType<typeof vi.fn>).mockReturnValue(false);
 
     await controller.updateProfile(req, res, next);
     expect(next).toHaveBeenCalledWith(expect.any(AppError));
@@ -311,8 +311,8 @@ describe("UserController", () => {
   it("updateProfile: should throw if checkExistingEntries returns false", async () => {
     const { next, req, res } = getMockReqResSession(mockUser);
     req.body = { email: "valid@email.com", name: "n", username: "u" };
-    vi.mocked(validateEmail).mockReturnValue(true);
-    vi.mocked(checkExistingEntries).mockResolvedValue(false);
+    (validateEmail as unknown as ReturnType<typeof vi.fn>).mockReturnValue(true);
+    (checkExistingEntries as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(false);
 
     await controller.updateProfile(req, res, next);
     expect(next).toHaveBeenCalledWith(expect.any(AppError));

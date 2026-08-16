@@ -2,7 +2,7 @@ import { ErrorCode } from "#utils/errorCodes.js";
 
 export class AppError extends Error {
   public readonly code: ErrorCode;
-  public readonly details?: any;
+  public readonly details?: unknown;
   public readonly isOperational: boolean;
   public readonly statusCode: number;
 
@@ -11,7 +11,7 @@ export class AppError extends Error {
     statusCode = 500,
     code: ErrorCode = ErrorCode.INTERNAL_SERVER_ERROR,
     isOperational = true,
-    details?: any,
+    details?: unknown,
   ) {
     super(message);
     this.statusCode = statusCode;
@@ -23,6 +23,6 @@ export class AppError extends Error {
   }
 }
 
-export const isAppError = (error: any): error is AppError => {
+export const isAppError = (error: unknown): error is AppError => {
   return error instanceof AppError;
 };

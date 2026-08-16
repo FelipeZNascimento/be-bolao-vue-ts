@@ -22,7 +22,7 @@ export class BetController extends BaseController {
     super();
   }
 
-  getExtras = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getExtras = async (req: Request<{ season: string }>, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       if (req.session.user) {
         void this.userService.updateLastOnlineTime(req.session.user.id);
@@ -53,7 +53,7 @@ export class BetController extends BaseController {
     });
   };
 
-  getExtrasResults = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getExtrasResults = async (req: Request<{ season: string }>, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       if (req.session.user) {
         void this.userService.updateLastOnlineTime(req.session.user.id);

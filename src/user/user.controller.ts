@@ -66,7 +66,7 @@ export class UserController extends BaseController {
     });
   };
 
-  getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getById = async (req: Request<{ userId: string }>, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       const season = process.env.SEASON;
       const userId = req.params.userId;
@@ -127,7 +127,7 @@ export class UserController extends BaseController {
     });
   };
 
-  register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  register = async (req: Request<{ season: string }>, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       const season = req.params.season || process.env.SEASON;
 

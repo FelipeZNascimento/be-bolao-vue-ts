@@ -83,7 +83,7 @@ export class RankingController extends BaseController {
       }
 
       const weeklyMaximumPoints = calculateMaxPoints(season, matches);
-      const weeklyRanking = buildWeeklyUserRanking(users, matches, bets, weeklyMaximumPoints);
+      const weeklyRanking: IRankingLine[] = buildWeeklyUserRanking(users, matches, bets, weeklyMaximumPoints);
       weeklyRanking.forEach((rankingLine) => {
         const userAccumulated = usersAccumulated.find((u) => u.userId === rankingLine.user.id);
 
@@ -179,7 +179,7 @@ export class RankingController extends BaseController {
     return { extras, extrasResults, matches, startedMatches, users };
   };
 
-  getRanking = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getRanking = async (req: Request<{ season: string }>, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       const season = req.params.season || process.env.SEASON;
       const seasonStart = process.env.SEASON_START;
