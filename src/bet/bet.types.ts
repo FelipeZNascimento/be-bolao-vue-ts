@@ -1,10 +1,10 @@
-import type { IUser } from "#user/user.types.js";
+import type { IUser } from '#user/user.types.js';
 
 export interface IBet {
   betValue: number;
   id: number;
   matchId: number;
-  user: Omit<IUser, "timestamp, fullname, seasonId, email">[];
+  user: Omit<IUser, 'timestamp, fullname, seasonId, email'>[];
   userColor: string;
   userIcon: string;
   userId: number;

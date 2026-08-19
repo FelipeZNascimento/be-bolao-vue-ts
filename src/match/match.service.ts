@@ -1,9 +1,9 @@
-import type { IMatch, IWeek } from "#match/match.types.js";
-import type { ICount } from "#shared/shared.types.js";
+import type { IMatch, IWeek } from '#match/match.types.js';
+import type { ICount } from '#shared/shared.types.js';
 
-import db from "#database/db.js";
-import { MatchStatus } from "#match/match.constants.js";
-import { ResultSetHeader } from "mysql2/promise";
+import db from '#database/db.js';
+import { MatchStatus } from '#match/match.constants.js';
+import { ResultSetHeader } from 'mysql2/promise';
 
 export class MatchService {
   async getBySeason(season: number) {
@@ -14,7 +14,7 @@ export class MatchService {
         FROM matches
         WHERE matches.id_season = ?
         ORDER BY matches.timestamp ASC`,
-      [season],
+      [season]
     )) as IMatch[];
   }
 
@@ -32,7 +32,7 @@ export class MatchService {
         WHERE matches.id_season = ?
         AND matches.week = ?
         ORDER BY matches.timestamp ASC`,
-      [season, week],
+      [season, week]
     )) as IMatch[];
   }
 
@@ -43,7 +43,7 @@ export class MatchService {
         WHERE matches.timestamp > UNIX_TIMESTAMP() - 24 * 3600
         ORDER BY timestamp ASC
         LIMIT 1`,
-      [],
+      []
     )) as IWeek[];
 
     return row.week;
@@ -57,7 +57,7 @@ export class MatchService {
         FROM matches
         WHERE matches.id_season = ?
         ORDER BY matches.timestamp ASC`,
-      [season],
+      [season]
     )) as IMatch[];
   }
 
@@ -66,7 +66,7 @@ export class MatchService {
       `SELECT SQL_NO_CACHE matches.id, matches.timestamp
         FROM matches
         WHERE matches.id = ?`,
-      [matchId],
+      [matchId]
     )) as { id: number; timestamp: number }[];
 
     return row as undefined | { id: number; timestamp: number };
@@ -78,7 +78,7 @@ export class MatchService {
         FROM matches
         WHERE id_season = ?
         AND week = ?`,
-      [season, week],
+      [season, week]
     )) as ICount[];
 
     return row.count;
@@ -88,12 +88,12 @@ export class MatchService {
     awayPoints: number,
     homePoints: number,
     matchStatus: MatchStatus,
-    possession: "away" | "home" | null,
+    possession: 'away' | 'home' | null,
     clock: null | string,
     awayTeamCode: string,
     homeTeamCode: string,
     week: number,
-    season: number,
+    season: number
   ) {
     return (await db.query(
       `UPDATE matches
@@ -114,7 +114,7 @@ export class MatchService {
         )
         AND week = ?
         AND id_season = ?`,
-      [awayPoints, homePoints, matchStatus, possession, clock, awayTeamCode, homeTeamCode, week, season],
+      [awayPoints, homePoints, matchStatus, possession, clock, awayTeamCode, homeTeamCode, week, season]
     )) as ResultSetHeader;
   }
 
@@ -125,7 +125,7 @@ export class MatchService {
     homeTeamCode: string,
     week: number,
     matchStatus: MatchStatus,
-    season: number,
+    season: number
   ) {
     return (await db.query(
       `UPDATE matches
@@ -144,7 +144,7 @@ export class MatchService {
         AND week = ?
         AND id_season = ?
         AND status = ?`,
-      [overUnder, homeTeamOdds, awayTeamCode, homeTeamCode, week, season, matchStatus],
+      [overUnder, homeTeamOdds, awayTeamCode, homeTeamCode, week, season, matchStatus]
     )) as ResultSetHeader;
   }
 }

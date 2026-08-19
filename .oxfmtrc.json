@@ -1,0 +1,7 @@
+{
+  "singleQuote": true,
+  "sortPackageJson": false,
+  "trailingComma": "none",
+  "singleAttributePerLine": true,
+  "printWidth": 120
+}

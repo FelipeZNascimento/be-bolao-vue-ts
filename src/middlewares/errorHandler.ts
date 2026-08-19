@@ -1,8 +1,8 @@
 // import { logger } from "@/config/logger";
 // import { MetricsService } from "@/services/metrics.service.js";
-import { ApiResponse } from "#utils/apiResponse.js";
-import { AppError } from "#utils/appError.js";
-import { NextFunction, Request, Response } from "express";
+import { ApiResponse } from '#utils/apiResponse.js';
+import { AppError } from '#utils/appError.js';
+import { NextFunction, Request, Response } from 'express';
 
 // const metricsService = new MetricsService();
 
@@ -24,5 +24,5 @@ export const errorHandler = (error: Error, req: Request, res: Response, _next: N
     return;
   }
 
-  ApiResponse.error(res, "Internal server error", 500);
+  ApiResponse.error(res, 'Internal server error', 500);
 };

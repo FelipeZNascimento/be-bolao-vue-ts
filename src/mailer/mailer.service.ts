@@ -1,7 +1,7 @@
 // import { logger } from "@/config/logger";
-import { getPasswordResetEmailTemplate } from "#mailer/reset.template.js";
-import { ENV } from "#utils/envParser.js";
-import { createTransport, Transporter, TransportOptions } from "nodemailer";
+import { getPasswordResetEmailTemplate } from '#mailer/reset.template.js';
+import { ENV } from '#utils/envParser.js';
+import { createTransport, Transporter, TransportOptions } from 'nodemailer';
 
 export class MailerService {
   private readonly fromAddress: string;
@@ -11,17 +11,17 @@ export class MailerService {
     // Production SMTP setup
     this.transporter = createTransport({
       auth: {
-        pass: ENV.SMTP_PASSWORD ?? "",
-        user: ENV.SMTP_USER ?? "",
+        pass: ENV.SMTP_PASSWORD ?? '',
+        user: ENV.SMTP_USER ?? ''
       },
       host: ENV.SMTP_HOST,
       port: ENV.SMTP_PORT ?? 465,
       secure: true,
       tls: {
-        rejectUnauthorized: true,
-      },
+        rejectUnauthorized: true
+      }
     } as TransportOptions);
-    this.fromAddress = process.env.SMTP_FROM ?? "bolao@omegafox.me";
+    this.fromAddress = process.env.SMTP_FROM ?? 'bolao@omegafox.me';
 
     // logger.info("Using SMTP configuration", {
     //   context: "EmailService.constructor",
@@ -37,7 +37,7 @@ export class MailerService {
 
   async sendPasswordResetEmail(to: string, name: string, resetToken: string) {
     if (!process.env.BASE_URL) {
-      throw new Error("BASE_URL is not defined in environment variables");
+      throw new Error('BASE_URL is not defined in environment variables');
     }
 
     const resetUrl = `${process.env.BASE_URL}/reset-password/${resetToken}`; // TODO: Change this to frontend URL
@@ -45,8 +45,8 @@ export class MailerService {
     await this.transporter.sendMail({
       from: this.fromAddress,
       html: getPasswordResetEmailTemplate(name, resetUrl),
-      subject: "[BolaoNFL] Redefinir sua senha",
-      to,
+      subject: '[BolaoNFL] Redefinir sua senha',
+      to
     });
 
     //   logger.info("Password reset email sent", {
@@ -84,19 +84,19 @@ export class MailerService {
   private precompileTemplates() {
     try {
       // getVerificationEmailTemplate("test", "test"); // Pre-compile by running once
-      getPasswordResetEmailTemplate("test", "test"); // Pre-compile by running once
-      console.info("Email templates precompiled successfully");
+      getPasswordResetEmailTemplate('test', 'test'); // Pre-compile by running once
+      console.info('Email templates precompiled successfully');
     } catch (error) {
-      console.error("Failed to precompile email templates", { error });
+      console.error('Failed to precompile email templates', { error });
     }
   }
 
   private async testConnection() {
     try {
       await this.transporter.verify();
-      console.info("SMTP connection verified");
+      console.info('SMTP connection verified');
     } catch (error) {
-      console.error("SMTP connection failed", { error });
+      console.error('SMTP connection failed', { error });
     }
   }
 }

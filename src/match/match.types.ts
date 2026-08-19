@@ -1,5 +1,5 @@
-import { ITeam } from "#team/team.types.js";
-import { RowDataPacket } from "mysql2/promise";
+import { ITeam } from '#team/team.types.js';
+import { RowDataPacket } from 'mysql2/promise';
 
 export interface IMatch extends RowDataPacket {
   away: ITeam | null;
@@ -12,7 +12,7 @@ export interface IMatch extends RowDataPacket {
   idAwayTeam: number;
   idHomeTeam: number;
   overUnder: string;
-  possession: "away" | "home" | null;
+  possession: 'away' | 'home' | null;
   season: number;
   status: number;
   timestamp: number;

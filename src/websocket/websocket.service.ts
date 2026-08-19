@@ -1,10 +1,10 @@
-import { singleton } from "#utils/singleton.js";
-import { Server } from "http";
-import { WebSocket, WebSocketServer } from "ws";
+import { singleton } from '#utils/singleton.js';
+import { Server } from 'http';
+import { WebSocket, WebSocketServer } from 'ws';
 
 export interface WebSocketMessage {
   data: unknown;
-  type: "connection" | "error" | "ping" | "pong";
+  type: 'connection' | 'error' | 'ping' | 'pong';
 }
 
 @singleton
@@ -31,25 +31,25 @@ export class WebSocketService {
   }
 
   private initialize(server: Server): void {
-    console.log("Initializing wss with server!");
+    console.log('Initializing wss with server!');
     this.wss = new WebSocketServer({ server });
 
-    this.wss.on("connection", (ws: WebSocket) => {
-      console.log("Stablishing websocket connection");
+    this.wss.on('connection', (ws: WebSocket) => {
+      console.log('Stablishing websocket connection');
       // this.metricsService.recordWebsocketConnection(true);
 
-      ws.on("close", () => {
-        console.info("Closing websocket connection");
+      ws.on('close', () => {
+        console.info('Closing websocket connection');
         // this.metricsService.recordWebsocketConnection(false);
       });
 
-      ws.on("message", (message: string) => {
-        console.info("Websocket sending a message: ", message);
+      ws.on('message', (message: string) => {
+        console.info('Websocket sending a message: ', message);
         // this.metricsService.recordWebsocketMessage("message", "in");
       });
 
-      ws.on("broadcast", (message: string) => {
-        console.info("Websocket broadcasting: ", message);
+      ws.on('broadcast', (message: string) => {
+        console.info('Websocket broadcasting: ', message);
         // this.metricsService.recordWebsocketMessage("message", "in");
       });
     });

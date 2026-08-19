@@ -1,7 +1,7 @@
-import type { ITeam } from "#team/team.types.js";
+import type { ITeam } from '#team/team.types.js';
 
-import { TeamService } from "#team/team.service.js";
-import { CACHE_KEYS, cachedInfo } from "#utils/dataCache.js";
+import { TeamService } from '#team/team.service.js';
+import { CACHE_KEYS, cachedInfo } from '#utils/dataCache.js';
 /**
  * getFromCacheOrFetch - Returns all teams from cache or fetches from database if not present in cache.
  *

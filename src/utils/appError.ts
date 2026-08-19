@@ -1,4 +1,4 @@
-import { ErrorCode } from "#utils/errorCodes.js";
+import { ErrorCode } from '#utils/errorCodes.js';
 
 export class AppError extends Error {
   public readonly code: ErrorCode;
@@ -11,7 +11,7 @@ export class AppError extends Error {
     statusCode = 500,
     code: ErrorCode = ErrorCode.INTERNAL_SERVER_ERROR,
     isOperational = true,
-    details?: unknown,
+    details?: unknown
   ) {
     super(message);
     this.statusCode = statusCode;

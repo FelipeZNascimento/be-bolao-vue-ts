@@ -1,22 +1,22 @@
-import type { IBet } from "#bet/bet.types.js";
-import type { IMatch } from "#match/match.types.js";
-import type { ITeam } from "#team/team.types.js";
+import type { IBet } from '#bet/bet.types.js';
+import type { IMatch } from '#match/match.types.js';
+import type { ITeam } from '#team/team.types.js';
 
-import { BetService } from "#bet/bet.service.js";
-import { MATCH_STATUS, MatchStatus } from "#match/match.constants.js";
-import { MatchService } from "#match/match.service.js";
-import { mergeBetsToMatches } from "#match/match.utils.js";
-import { RankingController } from "#ranking/ranking.controller.js";
-import { BaseController } from "#shared/base.controller.js";
-import { TeamService } from "#team/team.service.js";
-import { getFromCacheOrFetch, setTeamsCache } from "#team/team.util.js";
-import { UserService } from "#user/user.service.js";
-import { isFulfilled, isRejected } from "#utils/apiResponse.js";
-import { AppError } from "#utils/appError.js";
-import { CACHE_KEYS, cachedInfo } from "#utils/dataCache.js";
-import { ErrorCode } from "#utils/errorCodes.js";
-import { WebSocketService } from "#websocket/websocket.service.js";
-import { NextFunction, Request, Response } from "express";
+import { BetService } from '#bet/bet.service.js';
+import { MATCH_STATUS, MatchStatus } from '#match/match.constants.js';
+import { MatchService } from '#match/match.service.js';
+import { mergeBetsToMatches } from '#match/match.utils.js';
+import { RankingController } from '#ranking/ranking.controller.js';
+import { BaseController } from '#shared/base.controller.js';
+import { TeamService } from '#team/team.service.js';
+import { getFromCacheOrFetch, setTeamsCache } from '#team/team.util.js';
+import { UserService } from '#user/user.service.js';
+import { isFulfilled, isRejected } from '#utils/apiResponse.js';
+import { AppError } from '#utils/appError.js';
+import { CACHE_KEYS, cachedInfo } from '#utils/dataCache.js';
+import { ErrorCode } from '#utils/errorCodes.js';
+import { WebSocketService } from '#websocket/websocket.service.js';
+import { NextFunction, Request, Response } from 'express';
 
 export class MatchController extends BaseController {
   constructor(
@@ -24,7 +24,7 @@ export class MatchController extends BaseController {
     private userService: UserService,
     private betService: BetService,
     private teamService: TeamService,
-    private websocketInstance: WebSocketService,
+    private websocketInstance: WebSocketService
   ) {
     super();
   }
@@ -32,7 +32,7 @@ export class MatchController extends BaseController {
   getBySeasonWeek = async (
     req: Request<{ season: string; week: string }>,
     res: Response,
-    next: NextFunction,
+    next: NextFunction
   ): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       let user = null;
@@ -51,7 +51,7 @@ export class MatchController extends BaseController {
       }
 
       if (!season || isNaN(week)) {
-        throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
+        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
       const teams: ITeam[] = await getFromCacheOrFetch(this.teamService);
@@ -67,7 +67,7 @@ export class MatchController extends BaseController {
 
       // Only throw if user or matches fetch failed
       if (isRejected(startedMatchesBetsResponse) || (user && isRejected(userBetsResponse))) {
-        throw new AppError("Base de dados inacessível", 204, ErrorCode.DB_ERROR);
+        throw new AppError('Base de dados inacessível', 204, ErrorCode.DB_ERROR);
       }
 
       const startedMatchesBets: IBet[] = isFulfilled(startedMatchesBetsResponse)
@@ -81,18 +81,18 @@ export class MatchController extends BaseController {
       try {
         matchesObject = mergeBetsToMatches(teams, matchesResponse, startedMatchesBets, userBets, user?.id);
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
         throw new AppError(
           `Erro ao mesclar apostas com partidas: ${errorMessage}`,
           500,
-          ErrorCode.INTERNAL_SERVER_ERROR,
+          ErrorCode.INTERNAL_SERVER_ERROR
         );
       }
 
       return {
         matches: matchesObject,
         season: season,
-        week: week,
+        week: week
       };
     });
   };
@@ -105,12 +105,12 @@ export class MatchController extends BaseController {
       let updateResponse;
 
       if (!season || !seasonStart) {
-        throw new AppError("Erro de inicialização", 404, ErrorCode.INTERNAL_SERVER_ERROR);
+        throw new AppError('Erro de inicialização', 404, ErrorCode.INTERNAL_SERVER_ERROR);
       }
 
       const { key } = req.params;
       if (key !== process.env.API_UPDATE_KEY) {
-        throw new AppError("Chave inválida", 401, ErrorCode.UNAUTHORIZED);
+        throw new AppError('Chave inválida', 401, ErrorCode.UNAUTHORIZED);
       }
 
       const reqBody = req.body as {
@@ -123,7 +123,7 @@ export class MatchController extends BaseController {
         homeTeamOdds: null | string;
         homeWinLosses?: string;
         overUnder: null | string;
-        possession: "away" | "home" | null;
+        possession: 'away' | 'home' | null;
         status: MatchStatus;
         week: null | number;
       };
@@ -140,7 +140,7 @@ export class MatchController extends BaseController {
         overUnder,
         possession,
         status,
-        week,
+        week
       } = reqBody;
 
       if (homeWinLosses) {
@@ -173,7 +173,7 @@ export class MatchController extends BaseController {
           homeTeamCode,
           week,
           status,
-          parseInt(season),
+          parseInt(season)
         );
       } else if (
         status !== MATCH_STATUS.NOT_STARTED &&
@@ -194,10 +194,10 @@ export class MatchController extends BaseController {
           awayTeamCode,
           homeTeamCode,
           week,
-          parseInt(season),
+          parseInt(season)
         );
       } else {
-        throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
+        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
       // If any match was updated, we need to update ranking and send websocket message
@@ -206,13 +206,13 @@ export class MatchController extends BaseController {
           this.userService,
           this.matchService,
           this.teamService,
-          this.betService,
+          this.betService
         );
 
         // Update ranking
         const { seasonRanking, weeklyRanking } = await rankingController.calculateRanking(
           parseInt(season),
-          parseInt(seasonStart),
+          parseInt(seasonStart)
         );
 
         const currentWeek = cachedInfo.get<number>(CACHE_KEYS.CURRENT_WEEK);
@@ -225,7 +225,7 @@ export class MatchController extends BaseController {
 
           const matchesObject = mergeBetsToMatches(teams, updatedMatches, startedMatchesBets, [], user?.id);
           this.websocketInstance.broadcast(
-            JSON.stringify({ matches: matchesObject, ranking: { seasonRanking, weeklyRanking }, week: week }),
+            JSON.stringify({ matches: matchesObject, ranking: { seasonRanking, weeklyRanking }, week: week })
           );
         }
       }
