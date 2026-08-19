@@ -10,6 +10,7 @@ on:
 
 jobs:
   quality-checks:
+    name: Type-check, lint, format & tests
     runs-on: ubuntu-latest
 
     steps:
