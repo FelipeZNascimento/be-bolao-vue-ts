@@ -1,6 +1,5 @@
 import type { ITeam } from '#team/team.types.js';
 
-/* eslint-disable perfectionist/sort-objects */
 const SUPERBOWL_WINNER_POINTS = 100;
 const CONFERENCE_CHAMPION_POINTS = 50;
 const DIVISION_CHAMPION_POINTS = 20;

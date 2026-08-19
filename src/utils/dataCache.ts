@@ -1,4 +1,3 @@
-/* eslint-disable perfectionist/sort-objects */
 import NodeCache from 'node-cache';
 
 export const CACHE_KEYS = {
