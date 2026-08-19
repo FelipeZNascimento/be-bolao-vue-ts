@@ -3,9 +3,9 @@ const config = {
     database: process.env.SQL_DB,
     host: process.env.SQL_HOST,
     password: process.env.SQL_PASS,
-    user: process.env.SQL_USER,
+    user: process.env.SQL_USER
   },
   listPerPage: 100,
-  port: 3306,
+  port: 3306
 };
 export default config;

@@ -24,7 +24,7 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version-file: package.json
-          cache: "pnpm"
+          cache: 'pnpm'
 
       - name: Install Dependencies
         run: pnpm i --frozen-lockfile
@@ -40,8 +40,8 @@ jobs:
           host: ${{ secrets.server }}
           username: ${{ secrets.username }}
           password: ${{secrets.password}}
-          localDir: "./dist/"
-          remoteDir: "./"
+          localDir: './dist/'
+          remoteDir: './'
           port: 22
 
       - name: 🔁 Retry PROD upload if handshake failed
@@ -51,6 +51,6 @@ jobs:
           host: ${{ secrets.server }}
           username: ${{ secrets.username }}
           password: ${{secrets.password}}
-          localDir: "./dist/"
-          remoteDir: "./"
+          localDir: './dist/'
+          remoteDir: './'
           port: 22

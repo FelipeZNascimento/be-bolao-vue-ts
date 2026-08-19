@@ -4,13 +4,13 @@ export function singleton<T extends new (...args: any[]) => object>(constructor:
 
   return class extends (constructor as any) {
     constructor(...args: any[]) {
+      super(...args);
       if (!instances.has(constructor)) {
-        super(...args);
         instances.set(constructor, this as InstanceType<T>);
       }
       const inst = instances.get(constructor);
       if (!inst) {
-        throw new Error("Singleton instance missing");
+        throw new Error('Singleton instance missing');
       }
       return inst;
     }

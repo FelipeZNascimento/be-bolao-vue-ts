@@ -1,55 +1,68 @@
-import type { IExtraBet } from "#bet/bet.types.js";
-import type { ITeam } from "#team/team.types.js";
+import type { IExtraBet } from '#bet/bet.types.js';
+import type { ITeam } from '#team/team.types.js';
 
-import { BetService } from "#bet/bet.service.js";
-import { processExtraBets } from "#bet/bet.utils.js";
-import { MatchService } from "#match/match.service.js";
-import { BaseController } from "#shared/base.controller.js";
-import { TeamService } from "#team/team.service.js";
-import { getFromCacheOrFetch } from "#team/team.util.js";
-import { UserService } from "#user/user.service.js";
-import { AppError } from "#utils/appError.js";
-import { ErrorCode } from "#utils/errorCodes.js";
-import { NextFunction, Request, Response } from "express";
+import { BetService } from '#bet/bet.service.js';
+import { processExtraBets } from '#bet/bet.utils.js';
+import { MatchService } from '#match/match.service.js';
+import { BaseController } from '#shared/base.controller.js';
+import { TeamService } from '#team/team.service.js';
+import { getFromCacheOrFetch } from '#team/team.util.js';
+import { UserService } from '#user/user.service.js';
+import { AppError } from '#utils/appError.js';
+import { ErrorCode } from '#utils/errorCodes.js';
+import { NextFunction, Request, Response } from 'express';
 
 export class BetController extends BaseController {
   constructor(
     private betService: BetService,
     private matchService: MatchService,
     private userService: UserService,
-    private teamService: TeamService,
+    private teamService: TeamService
   ) {
     super();
   }
 
   getExtras = async (req: Request<{ season: string }>, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      if (req.session.user) {
-        void this.userService.updateLastOnlineTime(req.session.user.id);
-      }
-
       const season = req.params.season || process.env.SEASON;
       const seasonStart = process.env.SEASON_START;
       if (!seasonStart) {
-        throw new AppError("Erro de inicialização", 404, ErrorCode.INTERNAL_SERVER_ERROR);
+        throw new AppError('Erro de inicialização', 404, ErrorCode.INTERNAL_SERVER_ERROR);
       }
 
       if (!season) {
-        throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
+        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
+      }
+
+      let activeProfileExtraBets: IExtraBet[] = [];
+      if (req.session.user) {
+        void this.userService.updateLastOnlineTime(req.session.user.id);
+        activeProfileExtraBets = await this.betService.getActiveProfileExtras(req.session.user.id, parseInt(season));
       }
 
       const extraBets: IExtraBet[] = await this.betService.getExtras(parseInt(season), parseInt(seasonStart));
       const teams: ITeam[] = await getFromCacheOrFetch(this.teamService);
 
-      return extraBets.map((bet) => ({
-        bets: processExtraBets(extraBets.find((b) => b.idUser === bet.idUser)?.json ?? "", teams),
+      const extraBetsObj = extraBets.map((bet) => ({
+        bets: processExtraBets(extraBets.find((b) => b.idUser === bet.idUser)?.json ?? '', teams),
         user: {
           color: bet.userColor,
           icon: bet.userIcon,
           id: bet.idUser,
-          name: bet.userName,
-        },
+          name: bet.userName
+        }
       }));
+      const activeProfileExtraBetsObj = activeProfileExtraBets.map((bet) => ({
+        bets: processExtraBets(activeProfileExtraBets.find((b) => b.idUser === bet.idUser)?.json ?? '', teams),
+        user: {
+          color: bet.userColor,
+          icon: bet.userIcon,
+          id: bet.idUser,
+          name: bet.userName
+        }
+      }));
+
+      return { extraBets: extraBetsObj, activeProfileExtraBets: activeProfileExtraBetsObj };
     });
   };
 
@@ -63,22 +76,22 @@ export class BetController extends BaseController {
       const seasonStart = process.env.SEASON_START;
 
       if (!seasonStart) {
-        throw new AppError("Erro de inicialização", 404, ErrorCode.INTERNAL_SERVER_ERROR);
+        throw new AppError('Erro de inicialização', 404, ErrorCode.INTERNAL_SERVER_ERROR);
       }
 
       if (!season) {
-        throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
+        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
       const extraBetsResults: IExtraBet[] | undefined = await this.betService.getExtrasResults(
         parseInt(season),
-        parseInt(seasonStart),
+        parseInt(seasonStart)
       );
       const teams: ITeam[] = await getFromCacheOrFetch(this.teamService);
 
       if (!extraBetsResults || extraBetsResults.length === 0) {
         return {
-          bets: [],
+          bets: []
         };
       }
 
@@ -89,7 +102,7 @@ export class BetController extends BaseController {
   update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       if (!req.session.user) {
-        throw new AppError("Sem sessão ativa", 401, ErrorCode.UNAUTHORIZED);
+        throw new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED);
       }
 
       const user = req.session.user;
@@ -102,7 +115,7 @@ export class BetController extends BaseController {
       const matchResponse = await this.matchService.getTimestampByMatchId(matchId);
       const nowTimestamp = Math.floor(new Date().getTime() / 1000);
       if (matchResponse && matchResponse.timestamp < nowTimestamp) {
-        throw new AppError("Não autorizado a fazer apostas nesta partida", 401, ErrorCode.UNAUTHORIZED);
+        throw new AppError('Não autorizado a fazer apostas nesta partida', 401, ErrorCode.UNAUTHORIZED);
       }
 
       if (matchResponse) {
@@ -115,7 +128,7 @@ export class BetController extends BaseController {
   updateExtra = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       if (!req.session.user) {
-        throw new AppError("Sem sessão ativa", 401, ErrorCode.UNAUTHORIZED);
+        throw new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED);
       }
 
       const user = req.session.user;
@@ -129,14 +142,39 @@ export class BetController extends BaseController {
       const newExtraBets = reqBody;
 
       if (!seasonStart || !season) {
-        throw new AppError("Erro de inicialização", 404, ErrorCode.INTERNAL_SERVER_ERROR);
+        throw new AppError('Erro de inicialização', 404, ErrorCode.INTERNAL_SERVER_ERROR);
       }
 
       if (nowTimestamp >= parseInt(seasonStart)) {
-        throw new AppError("Não autorizado! A temporada já começou.", 401, ErrorCode.UNAUTHORIZED);
+        throw new AppError('Não autorizado! A temporada já começou.', 401, ErrorCode.UNAUTHORIZED);
       }
 
       await this.betService.updateExtras(JSON.stringify(newExtraBets), user.id, season);
+
+      const activeProfileExtraBets = await this.betService.getActiveProfileExtras(user.id, parseInt(season));
+      const extraBets: IExtraBet[] = await this.betService.getExtras(parseInt(season), parseInt(seasonStart));
+      const teams: ITeam[] = await getFromCacheOrFetch(this.teamService);
+
+      const extraBetsObj = extraBets.map((bet) => ({
+        bets: processExtraBets(extraBets.find((b) => b.idUser === bet.idUser)?.json ?? '', teams),
+        user: {
+          color: bet.userColor,
+          icon: bet.userIcon,
+          id: bet.idUser,
+          name: bet.userName
+        }
+      }));
+      const activeProfileExtraBetsObj = activeProfileExtraBets.map((bet) => ({
+        bets: processExtraBets(activeProfileExtraBets.find((b) => b.idUser === bet.idUser)?.json ?? '', teams),
+        user: {
+          color: bet.userColor,
+          icon: bet.userIcon,
+          id: bet.idUser,
+          name: bet.userName
+        }
+      }));
+
+      return { extraBets: extraBetsObj, activeProfileExtraBets: activeProfileExtraBetsObj };
     });
   };
 }

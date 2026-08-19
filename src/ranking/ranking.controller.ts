@@ -1,40 +1,40 @@
-import type { IBet, IExtraBet } from "#bet/bet.types.js";
-import type { IMatch } from "#match/match.types.js";
-import type { IRankingLine, IWeeklyRanking } from "#ranking/ranking.types.js";
-import type { ITeam } from "#team/team.types.js";
-import type { IUser } from "#user/user.types.js";
+import type { IBet, IExtraBet } from '#bet/bet.types.js';
+import type { IMatch } from '#match/match.types.js';
+import type { IRankingLine, IWeeklyRanking } from '#ranking/ranking.types.js';
+import type { ITeam } from '#team/team.types.js';
+import type { IUser } from '#user/user.types.js';
 
-import { BetService } from "#bet/bet.service.js";
-import { MatchService } from "#match/match.service.js";
+import { BetService } from '#bet/bet.service.js';
+import { MatchService } from '#match/match.service.js';
 import {
   buildSeasonUserRanking,
   buildWeeklyUserRanking,
   calculateMaxPoints,
   isWeekLocked,
-  sortRankingLine,
-} from "#ranking/ranking.utils.js";
-import { BaseController } from "#shared/base.controller.js";
-import { TeamService } from "#team/team.service.js";
-import { UserService } from "#user/user.service.js";
-import { isFulfilled, isRejected } from "#utils/apiResponse.js";
-import { AppError } from "#utils/appError.js";
-import { CACHE_KEYS, cachedInfo } from "#utils/dataCache.js";
-import { ErrorCode } from "#utils/errorCodes.js";
-import { NextFunction, Request, Response } from "express";
+  sortRankingLine
+} from '#ranking/ranking.utils.js';
+import { BaseController } from '#shared/base.controller.js';
+import { TeamService } from '#team/team.service.js';
+import { UserService } from '#user/user.service.js';
+import { isFulfilled, isRejected } from '#utils/apiResponse.js';
+import { AppError } from '#utils/appError.js';
+import { CACHE_KEYS, cachedInfo } from '#utils/dataCache.js';
+import { ErrorCode } from '#utils/errorCodes.js';
+import { NextFunction, Request, Response } from 'express';
 
 export class RankingController extends BaseController {
   constructor(
     private userService: UserService,
     private matchService: MatchService,
     private teamService: TeamService,
-    private betService: BetService,
+    private betService: BetService
   ) {
     super();
   }
 
   calculateRanking = async (season: number, seasonStart: number) => {
     if (!season || !seasonStart) {
-      throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
+      throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
     }
 
     const { extras, extrasResults, matches, startedMatches, users } = await this.fetchRequiredData(season, seasonStart);
@@ -47,7 +47,7 @@ export class RankingController extends BaseController {
       startedMatches,
       bets,
       extras,
-      extrasResults ? extrasResults[0] : null,
+      extrasResults ? extrasResults[0] : null
     );
 
     return { seasonRanking, weeklyRanking };
@@ -59,7 +59,7 @@ export class RankingController extends BaseController {
     startedMatches: IMatch[],
     bets: IBet[],
     extras: IExtraBet[],
-    extrasResults: IExtraBet | null,
+    extrasResults: IExtraBet | null
   ) => {
     const totalPossiblePoints: number = calculateMaxPoints(season, startedMatches);
     return buildSeasonUserRanking(users, startedMatches, bets, extras, extrasResults, totalPossiblePoints);
@@ -70,11 +70,11 @@ export class RankingController extends BaseController {
     const usersAccumulated = users.map((user) => ({ accumulatedBullseye: 0, accumulatedPoints: 0, userId: user.id }));
     return weeklyRankingObj.map((weeklyMatches) => {
       const { matches, week } = weeklyMatches;
-      const cacheKey = CACHE_KEYS.WEEKLY_RANKING.toString() + "_" + season.toString() + "_" + week.toString();
+      const cacheKey = CACHE_KEYS.WEEKLY_RANKING.toString() + '_' + season.toString() + '_' + week.toString();
       let cachedRanking = cachedInfo.get<IRankingLine[]>(cacheKey);
 
       if (cachedRanking) {
-        console.log("Returning cached ranking for ", cacheKey);
+        console.log('Returning cached ranking for ', cacheKey);
         lastWeekReturnedFromCache = cacheKey;
         return { isLocked: true, ranking: cachedRanking, week: weeklyMatches.week };
       } else if (lastWeekReturnedFromCache) {
@@ -91,7 +91,7 @@ export class RankingController extends BaseController {
           // If there's a cached ranking, we need to take it into account for accumulating points
           if (cachedRanking) {
             const cachedUserRanking = cachedRanking.find(
-              (cachedRankingLine) => cachedRankingLine.user.id === rankingLine.user.id,
+              (cachedRankingLine) => cachedRankingLine.user.id === rankingLine.user.id
             );
             if (cachedUserRanking) {
               userAccumulated.accumulatedPoints = cachedUserRanking.score.accumulatedPoints;
@@ -110,7 +110,7 @@ export class RankingController extends BaseController {
       const sortedByAccumulatedWeeklyRanking = weeklyRanking.sort(
         (a, b) =>
           b.score.accumulatedPoints - a.score.accumulatedPoints ||
-          b.score.accumulatedBullseye - a.score.accumulatedBullseye,
+          b.score.accumulatedBullseye - a.score.accumulatedBullseye
       );
 
       sortedByAccumulatedWeeklyRanking.forEach((rankingLine, index) => {
@@ -136,14 +136,14 @@ export class RankingController extends BaseController {
       const isLocked = isWeekLocked(matches) && matches.length === weeklyMatches.matchCount;
 
       if (isLocked) {
-        console.log("Caching ranking for ", cacheKey);
+        console.log('Caching ranking for ', cacheKey);
         cachedInfo.set(cacheKey, sortedWeeklyRanking);
       }
 
       return {
         isLocked,
         ranking: sortedWeeklyRanking,
-        week: weeklyMatches.week,
+        week: weeklyMatches.week
       };
     });
   };
@@ -160,12 +160,12 @@ export class RankingController extends BaseController {
       this.userService.getBySeason(season),
       this.matchService.getMatchesBySeason(season),
       this.betService.getExtras(season, seasonStart),
-      this.betService.getExtrasResults(season, seasonStart),
+      this.betService.getExtrasResults(season, seasonStart)
     ]);
 
     // Only throw if user or matches fetch failed
     if (isRejected(userResponse) || isRejected(startedMatchesResponse)) {
-      throw new AppError("Base de dados inacessível", 204, ErrorCode.DB_ERROR);
+      throw new AppError('Base de dados inacessível', 204, ErrorCode.DB_ERROR);
     }
 
     const users = isFulfilled(userResponse) ? userResponse.value : [];
@@ -185,7 +185,7 @@ export class RankingController extends BaseController {
       const seasonStart = process.env.SEASON_START;
 
       if (!season || !seasonStart) {
-        throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
+        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
       return await this.calculateRanking(parseInt(season), parseInt(seasonStart));
@@ -200,7 +200,7 @@ export class RankingController extends BaseController {
       const mergedMatch: IMatch = {
         ...match,
         away: awayTeam ?? null,
-        home: homeTeam ?? null,
+        home: homeTeam ?? null
       };
 
       return mergedMatch;
@@ -236,7 +236,7 @@ export class RankingController extends BaseController {
 
     return {
       bets,
-      weeklyRankingObj,
+      weeklyRankingObj
     };
   };
 }

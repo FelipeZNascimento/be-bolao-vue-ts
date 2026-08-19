@@ -1,17 +1,17 @@
-import type { IUser } from "#user/user.types.js";
+import type { IUser } from '#user/user.types.js';
 
-import { MailerService } from "#mailer/mailer.service.js";
-import { BaseController } from "#shared/base.controller.js";
-import { UserService } from "#user/user.service.js";
-import { checkExistingEntries, generateVerificationToken, validateEmail } from "#user/user.utils.js";
-import { isRejected } from "#utils/apiResponse.js";
-import { AppError } from "#utils/appError.js";
-import { cachedInfo } from "#utils/dataCache.js";
-import { ErrorCode } from "#utils/errorCodes.js";
-import { NextFunction, Request, Response } from "express";
+import { MailerService } from '#mailer/mailer.service.js';
+import { BaseController } from '#shared/base.controller.js';
+import { UserService } from '#user/user.service.js';
+import { checkExistingEntries, generateVerificationToken, validateEmail } from '#user/user.utils.js';
+import { isRejected } from '#utils/apiResponse.js';
+import { AppError } from '#utils/appError.js';
+import { cachedInfo } from '#utils/dataCache.js';
+import { ErrorCode } from '#utils/errorCodes.js';
+import { NextFunction, Request, Response } from 'express';
 
 // Extend express-session types to include 'user' property
-declare module "express-session" {
+declare module 'express-session' {
   interface SessionData {
     user: IUser | null;
   }
@@ -20,7 +20,7 @@ declare module "express-session" {
 export class UserController extends BaseController {
   constructor(
     private userService: UserService,
-    private mailerService: MailerService,
+    private mailerService: MailerService
   ) {
     super();
   }
@@ -31,13 +31,13 @@ export class UserController extends BaseController {
       const { email } = reqBody;
 
       if (!email) {
-        throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
+        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
       const resetToken = generateVerificationToken();
       cachedInfo.set(`PASSWORD_RESET_${email}`, resetToken, 60 * 60); // 60 minutes expiration
 
-      await this.mailerService.sendPasswordResetEmail(email, "", resetToken);
+      await this.mailerService.sendPasswordResetEmail(email, '', resetToken);
     });
   };
 
@@ -58,7 +58,7 @@ export class UserController extends BaseController {
     await this.handleRequest(req, res, next, async () => {
       const season = process.env.SEASON;
       if (!season) {
-        throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
+        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
       const response: IUser[] = await this.userService.getBySeason(parseInt(season));
@@ -71,7 +71,7 @@ export class UserController extends BaseController {
       const season = process.env.SEASON;
       const userId = req.params.userId;
       if (!season) {
-        throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
+        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
       if (!userId) {
@@ -93,7 +93,7 @@ export class UserController extends BaseController {
       const { email, password } = reqBody;
 
       if (!email || !password) {
-        throw new AppError("Credenciais inválidas", 401, ErrorCode.UNAUTHORIZED);
+        throw new AppError('Credenciais inválidas', 401, ErrorCode.UNAUTHORIZED);
       }
 
       const response: IUser[] = await this.userService.login(email, password);
@@ -103,7 +103,7 @@ export class UserController extends BaseController {
         await this.userService.updateLastOnlineTime(user.id);
         return user;
       } else {
-        throw new AppError("Credenciais inválidas", 401, ErrorCode.UNAUTHORIZED);
+        throw new AppError('Credenciais inválidas', 401, ErrorCode.UNAUTHORIZED);
       }
     });
   };
@@ -132,7 +132,7 @@ export class UserController extends BaseController {
       const season = req.params.season || process.env.SEASON;
 
       if (!season) {
-        throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
+        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
       const reqBody = req.body as {
@@ -146,27 +146,27 @@ export class UserController extends BaseController {
       const { color, email, fullName, icon, name, password } = reqBody;
 
       if (!email || !password || !name || !fullName) {
-        throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
+        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
       const isValid = await checkExistingEntries(this.userService, email, name);
       if (!isValid) {
-        throw new AppError("Email ou nome já registrado", 409, ErrorCode.VALIDATION_ERROR);
+        throw new AppError('Email ou nome já registrado', 409, ErrorCode.VALIDATION_ERROR);
       }
 
       const registerResponse = await this.userService.register(email, fullName, name, password);
       if (registerResponse.affectedRows === 0) {
-        throw new AppError("Registro falhou", 500, ErrorCode.DB_ERROR);
+        throw new AppError('Registro falhou', 500, ErrorCode.DB_ERROR);
       }
 
       const { insertId } = registerResponse;
       const [setOnCurrentSeasonResponse, setIconsResponse] = await Promise.allSettled([
         this.userService.setOnCurrentSeason(parseInt(season), insertId),
-        this.userService.setIcons(insertId, icon, color),
+        this.userService.setIcons(insertId, icon, color)
       ]);
 
       if (isRejected(setOnCurrentSeasonResponse) || isRejected(setIconsResponse)) {
-        throw new AppError("Base de dados inacessível", 204, ErrorCode.DB_ERROR);
+        throw new AppError('Base de dados inacessível', 204, ErrorCode.DB_ERROR);
       }
 
       const loginResponse: IUser[] = await this.userService.login(email, password);
@@ -184,7 +184,7 @@ export class UserController extends BaseController {
   updatePassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       if (!req.session.user) {
-        throw new AppError("Sem sessão ativa", 401, ErrorCode.UNAUTHORIZED);
+        throw new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED);
       }
 
       const user = req.session.user;
@@ -192,14 +192,14 @@ export class UserController extends BaseController {
       const { currentPassword, newPassword } = reqBody;
 
       if (!currentPassword || !newPassword) {
-        throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
+        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
       void this.userService.updateLastOnlineTime(user.id);
 
       const updatePasswordResponse = await this.userService.updatePassword(currentPassword, newPassword, user.id);
       if (updatePasswordResponse.affectedRows === 0) {
-        throw new AppError("Senha incorreta", 409, ErrorCode.VALIDATION_ERROR);
+        throw new AppError('Senha incorreta', 409, ErrorCode.VALIDATION_ERROR);
       }
 
       return;
@@ -212,13 +212,13 @@ export class UserController extends BaseController {
       const { email, newPassword, token } = reqBody;
 
       if (!email || !token || !newPassword) {
-        throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
+        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
       // void this.userService.updateLastOnlineTime(user.id);
       const cachedToken = cachedInfo.get(`PASSWORD_RESET_${email}`);
       if (cachedToken !== token) {
-        throw new AppError("Token inválido ou expirado", 409, ErrorCode.VALIDATION_ERROR);
+        throw new AppError('Token inválido ou expirado', 409, ErrorCode.VALIDATION_ERROR);
       }
 
       const user = await this.userService.getByEmail(email);
@@ -231,7 +231,7 @@ export class UserController extends BaseController {
   updatePreferences = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       if (!req.session.user) {
-        throw new AppError("Sem sessão ativa", 401, ErrorCode.UNAUTHORIZED);
+        throw new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED);
       }
 
       const user = req.session.user;
@@ -248,7 +248,7 @@ export class UserController extends BaseController {
   updateProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       if (!req.session.user) {
-        throw new AppError("Sem sessão ativa", 401, ErrorCode.UNAUTHORIZED);
+        throw new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED);
       }
 
       const user = req.session.user;
@@ -258,16 +258,16 @@ export class UserController extends BaseController {
       const { email, name, username } = reqBody;
 
       if (!email || !name || !username) {
-        throw new AppError("Campo obrigatório ausente", 400, ErrorCode.MISSING_REQUIRED_FIELD);
+        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
       if (!validateEmail(email)) {
-        throw new AppError("Email inválido", 409, ErrorCode.VALIDATION_ERROR);
+        throw new AppError('Email inválido', 409, ErrorCode.VALIDATION_ERROR);
       }
 
       const isValid = await checkExistingEntries(this.userService, email, username, user.id);
       if (!isValid) {
-        throw new AppError("Email ou nome de usuário já em uso", 409, ErrorCode.VALIDATION_ERROR);
+        throw new AppError('Email ou nome de usuário já em uso', 409, ErrorCode.VALIDATION_ERROR);
       }
 
       await this.userService.updateProfile(email, name, username, user.id);

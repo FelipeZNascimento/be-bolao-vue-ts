@@ -1,26 +1,26 @@
-import config from "#database/config.js";
-import mysql from "mysql2/promise";
+import config from '#database/config.js';
+import mysql from 'mysql2/promise';
 
 export const connection = mysql.createPool(config.db);
 
-connection.on("connection", function (connection) {
+connection.on('connection', function (connection) {
   // handy for testing
-  console.log("Pool id %d connected", connection.threadId);
+  console.log('Pool id %d connected', connection.threadId);
 });
 
-connection.on("enqueue", function () {
+connection.on('enqueue', function () {
   // handy for testing
-  console.log("Waiting for available connection slot");
+  console.log('Waiting for available connection slot');
 });
 
-connection.on("acquire", function (connection) {
+connection.on('acquire', function (connection) {
   // handy for testing
-  console.log("Connection %d acquired", connection.threadId);
+  console.log('Connection %d acquired', connection.threadId);
 });
 
-connection.on("release", function (connection) {
+connection.on('release', function (connection) {
   // handy for testing
-  console.log("Connection %d released", connection.threadId);
+  console.log('Connection %d released', connection.threadId);
 });
 
 async function query(sql: string, params: mysql.QueryValues) {
@@ -38,5 +38,5 @@ async function query(sql: string, params: mysql.QueryValues) {
 // process.on("SIGINT", handleShutdown);
 
 export default {
-  query,
+  query
 };

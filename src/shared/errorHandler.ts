@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ErrorCode } from "#utils/errorCodes.js";
+import { ErrorCode } from '#utils/errorCodes.js';
 
 export class ErrorHandler extends Error {
   public readonly code: ErrorCode;
@@ -12,7 +12,7 @@ export class ErrorHandler extends Error {
     statusCode = 500,
     code: ErrorCode = ErrorCode.INTERNAL_SERVER_ERROR,
     isOperational = true,
-    details?: any,
+    details?: any
   ) {
     super(message);
     this.statusCode = statusCode;
@@ -26,6 +26,6 @@ export class ErrorHandler extends Error {
 }
 
 export const isAppError = (error: any): error is ErrorHandler => {
-  console.log("isAppError: ", error);
+  console.log('isAppError: ', error);
   return error instanceof ErrorHandler;
 };

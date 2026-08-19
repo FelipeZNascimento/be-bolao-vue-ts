@@ -1,8 +1,8 @@
-import type { IUser } from "#user/user.types.js";
+import type { IUser } from '#user/user.types.js';
 
-import db from "#database/db.js";
-import { ICount } from "#shared/shared.types.js";
-import { ResultSetHeader } from "mysql2/promise";
+import db from '#database/db.js';
+import { ICount } from '#shared/shared.types.js';
+import { ResultSetHeader } from 'mysql2/promise';
 
 export class UserService {
   async getByEmail(email: string) {
@@ -16,7 +16,7 @@ export class UserService {
         LEFT JOIN users_online ON users.id = users_online.id_user
         WHERE users.login = ?
         GROUP BY users.id`,
-      [email],
+      [email]
     )) as IUser[];
 
     return row;
@@ -34,7 +34,7 @@ export class UserService {
         WHERE users.id = ?
         ORDER BY seasonId DESC
         LIMIT 1`,
-      [userId],
+      [userId]
     )) as IUser[];
 
     return row;
@@ -49,7 +49,7 @@ export class UserService {
         INNER JOIN users_season ON users.id = users_season.id_user AND users_season.id_season = ?
         LEFT JOIN users_icon ON users.id = users_icon.id_user
         LEFT JOIN users_online ON users.id = users_online.id_user`,
-      [season],
+      [season]
     )) as IUser[];
 
     return rows;
@@ -58,7 +58,7 @@ export class UserService {
   async isEmailValid(email: string, userId?: number) {
     const [rows] = (await db.query(`SELECT SQL_NO_CACHE COUNT(*) as count FROM users WHERE login = ? AND id <> ?`, [
       email,
-      userId,
+      userId
     ])) as ICount[];
 
     return rows.count === 0;
@@ -67,7 +67,7 @@ export class UserService {
   async isUsernameValid(name: string, userId?: number) {
     const [rows] = (await db.query(`SELECT SQL_NO_CACHE COUNT(*) as count FROM users WHERE name = ? AND id <> ?`, [
       name,
-      userId,
+      userId
     ])) as ICount[];
 
     return rows.count === 0;
@@ -83,7 +83,7 @@ export class UserService {
         WHERE users.login = ?
         AND users.password = ?
         GROUP BY users.id`,
-      [email, password],
+      [email, password]
     )) as IUser[];
 
     return rows;
@@ -94,7 +94,7 @@ export class UserService {
       email,
       password,
       fullName,
-      name,
+      name
     ])) as ResultSetHeader;
 
     return rows;
@@ -103,7 +103,7 @@ export class UserService {
   async setIcons(id: number, color: string, icon: string) {
     const rows = (await db.query(
       `INSERT INTO users_icon (id_user, icon, color) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE icon = ?, color = ?`,
-      [id, icon, color, icon, color],
+      [id, icon, color, icon, color]
     )) as ResultSetHeader;
 
     return rows;
@@ -112,7 +112,7 @@ export class UserService {
   async setOnCurrentSeason(season: number, id: number) {
     const rows = (await db.query(`INSERT INTO users_season (id_user, id_season) VALUES (?, ?)`, [
       id,
-      season,
+      season
     ])) as ResultSetHeader;
 
     return rows;
@@ -125,7 +125,7 @@ export class UserService {
 
     const rows = (await db.query(
       `INSERT INTO users_online (id_user) VALUES (?) ON DUPLICATE KEY UPDATE timestamp = NOW()`,
-      [id],
+      [id]
     )) as ResultSetHeader;
 
     return rows;
@@ -137,7 +137,7 @@ export class UserService {
         SET password = ?
         WHERE id = ?
         AND password = ?`,
-      [newPassword, id, currentPassword],
+      [newPassword, id, currentPassword]
     )) as ResultSetHeader;
 
     return rows;
@@ -148,7 +148,7 @@ export class UserService {
       `UPDATE users 
         SET password = ?
         WHERE id = ?`,
-      [newPassword, id],
+      [newPassword, id]
     )) as ResultSetHeader;
 
     return rows;
@@ -161,7 +161,7 @@ export class UserService {
         full_name = ?, 
         login = ?
         WHERE id = ?`,
-      [username, name, email, id],
+      [username, name, email, id]
     )) as ResultSetHeader;
 
     return rows;

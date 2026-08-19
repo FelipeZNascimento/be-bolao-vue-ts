@@ -1,7 +1,7 @@
-import type { ITeam } from "#team/team.types.js";
+import type { ITeam } from '#team/team.types.js';
 
-import db from "#database/db.js";
-import { CACHE_KEYS, cachedInfo } from "#utils/dataCache.js";
+import db from '#database/db.js';
+import { CACHE_KEYS, cachedInfo } from '#utils/dataCache.js';
 
 export class TeamService {
   async getAll() {

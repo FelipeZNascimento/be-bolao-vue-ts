@@ -1,7 +1,7 @@
-import { MatchService } from "#match/match.service.js";
-import { BaseController } from "#shared/base.controller.js";
-import { CACHE_KEYS, cachedInfo } from "#utils/dataCache.js";
-import { NextFunction, Request, Response } from "express";
+import { MatchService } from '#match/match.service.js';
+import { BaseController } from '#shared/base.controller.js';
+import { CACHE_KEYS, cachedInfo } from '#utils/dataCache.js';
+import { NextFunction, Request, Response } from 'express';
 
 export class SeasonController extends BaseController {
   constructor(private matchService: MatchService) {
@@ -22,7 +22,7 @@ export class SeasonController extends BaseController {
       return {
         currentSeason: season ? parseInt(season) : null,
         currentWeek: currentWeek ? currentWeek : null,
-        seasonStart: seasonStart ? parseInt(seasonStart) : null,
+        seasonStart: seasonStart ? parseInt(seasonStart) : null
       };
     });
   };

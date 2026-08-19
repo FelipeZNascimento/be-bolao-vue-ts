@@ -1,17 +1,17 @@
-import { isFulfilled, isRejected } from "#utils/apiResponse.js";
-import { AppError } from "#utils/appError.js";
-import { ErrorCode } from "#utils/errorCodes.js";
+import { isFulfilled, isRejected } from '#utils/apiResponse.js';
+import { AppError } from '#utils/appError.js';
+import { ErrorCode } from '#utils/errorCodes.js';
 
-import { UserService } from "./user.service.js";
+import { UserService } from './user.service.js';
 
 export const checkExistingEntries = async (userService: UserService, email: string, name: string, userId?: number) => {
   const [emailCheckResponse, usernameCheckResponse] = await Promise.allSettled([
     userService.isEmailValid(email, userId),
-    userService.isUsernameValid(name, userId),
+    userService.isUsernameValid(name, userId)
   ]);
 
   if (isRejected(emailCheckResponse) || isRejected(usernameCheckResponse)) {
-    throw new AppError("Base de dados inacessível", 204, ErrorCode.DB_ERROR);
+    throw new AppError('Base de dados inacessível', 204, ErrorCode.DB_ERROR);
   }
 
   const isEmailValid = isFulfilled(emailCheckResponse) ? emailCheckResponse.value : false;

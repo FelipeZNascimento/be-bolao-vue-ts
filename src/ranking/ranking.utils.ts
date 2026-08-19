@@ -1,10 +1,10 @@
-import type { IBet, IExtraBet } from "#bet/bet.types.js";
-import type { IMatch } from "#match/match.types.js";
-import type { IRankingLine, IRawExtras } from "#ranking/ranking.types.js";
-import type { IUser } from "#user/user.types.js";
+import type { IBet, IExtraBet } from '#bet/bet.types.js';
+import type { IMatch } from '#match/match.types.js';
+import type { IRankingLine, IRawExtras } from '#ranking/ranking.types.js';
+import type { IUser } from '#user/user.types.js';
 
-import { BET_VALUES, BetsValues, EXTRA_BETS_MAPPING, maxPointsPerBet } from "#bet/bet.utils.js";
-import { isMatchEnded } from "#match/match.utils.js";
+import { BET_VALUES, BetsValues, EXTRA_BETS_MAPPING, maxPointsPerBet } from '#bet/bet.utils.js';
+import { isMatchEnded } from '#match/match.utils.js';
 /**
  * sortRankingLine - Sorts ranking by points, bullseye and name and returns it
  *
@@ -15,7 +15,7 @@ import { isMatchEnded } from "#match/match.utils.js";
 export const sortRankingLine = (rankingLine: IRankingLine[]) => {
   return rankingLine.sort(
     (a, b) =>
-      b.score.total - a.score.total || b.score.bullseye - a.score.bullseye || a.user.name.localeCompare(b.user.name),
+      b.score.total - a.score.total || b.score.bullseye - a.score.bullseye || a.user.name.localeCompare(b.user.name)
   );
 };
 
@@ -33,7 +33,7 @@ export const buildWeeklyUserRanking = (
   users: IUser[],
   matches: IMatch[],
   bets: IBet[],
-  totalPossiblePoints: number,
+  totalPossiblePoints: number
 ) => {
   const ranking = users.map((user) => calculateUserPoints(user, matches, bets, totalPossiblePoints));
   const sortedRanking = sortRankingLine(ranking);
@@ -76,7 +76,7 @@ export const buildSeasonUserRanking = (
   bets: IBet[],
   extras: IExtraBet[],
   extrasResults: IExtraBet | null | undefined,
-  totalPossiblePoints: number,
+  totalPossiblePoints: number
 ) => {
   const ranking = users
     .map((user) => {
@@ -90,7 +90,7 @@ export const buildSeasonUserRanking = (
     })
     .sort(
       (a, b) =>
-        b.score.total - a.score.total || b.score.bullseye - a.score.bullseye || a.user.name.localeCompare(b.user.name),
+        b.score.total - a.score.total || b.score.bullseye - a.score.bullseye || a.user.name.localeCompare(b.user.name)
     );
 
   let position = 1;
@@ -174,15 +174,15 @@ const calculateUserPoints = (user: IUser, matches: IMatch[], bets: IBet[], total
       extras: 0,
       percentage: totalPercentage.toFixed(1),
       total: points,
-      winner: winnersCount,
+      winner: winnersCount
     },
     user: {
       color: user.color,
       icon: user.icon,
       id: user.id,
       isOnline: isOnline,
-      name: user.name,
-    },
+      name: user.name
+    }
   };
 
   return rankingLine;
@@ -306,7 +306,7 @@ const calculateExtrasReward = (user: IUser, extras: IExtraBet[], extrasResults: 
 export const calculateMaxPoints = (season: number, matches: IMatch[]): number => {
   return matches.reduce(
     (acumulator: number, match: IMatch) => acumulator + maxPointsPerBet.season(season, match.week),
-    0,
+    0
   );
 };
 
