@@ -6,6 +6,7 @@ export interface ITeam {
   division: string;
   foreground: string;
   id: number;
+  espnId: number;
   name: string;
   winLosses?: null | string;
 }
