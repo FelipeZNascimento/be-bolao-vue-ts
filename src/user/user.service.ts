@@ -10,9 +10,9 @@ const BCRYPT_SALT_ROUNDS = 12;
 export class UserService {
   async getByEmail(email: string) {
     const [row] = (await db.query(
-      `SELECT SQL_NO_CACHE users.id, users.login as email, users.name, users.full_name as fullName,
-        users_icon.icon, users_icon.color, unix_timestamp(users_online.timestamp) as timestamp,
-        users_season.id AS seasonId
+      `SELECT users.id, users.login as email, users.name, users.full_name as fullName,
+        users_icon.icon, users_icon.color, unix_timestamp(users_online.timestamp) as timestamp, users.admin,
+        users_season.id_season as seasonId, users_season.active
         FROM users
         INNER JOIN users_season ON users.id = users_season.id_user
         LEFT JOIN users_icon ON users.id = users_icon.id_user
@@ -28,9 +28,9 @@ export class UserService {
 
   async getById(userId: number) {
     const [row] = (await db.query(
-      `SELECT SQL_NO_CACHE users.id, users.login as email, users.name, users.full_name as fullName,
-        users_icon.icon, users_icon.color, unix_timestamp(users_online.timestamp) as timestamp,
-        users_season.id AS seasonId
+      `SELECT users.id, users.login as email, users.name, users.full_name as fullName,
+        users_icon.icon, users_icon.color, unix_timestamp(users_online.timestamp) as timestamp, users.admin,
+        users_season.id_season as seasonId, users_season.active, users_season.active
         FROM users
         INNER JOIN users_season ON users.id = users_season.id_user
         LEFT JOIN users_icon ON users.id = users_icon.id_user
@@ -44,13 +44,51 @@ export class UserService {
     return row;
   }
 
+  async getAdmin(season: number) {
+    const rows = (await db.query(
+      `SELECT SQL_NO_CACHE users.id, users.login as email, users.name, users.admin, users.full_name as fullName,
+        users_icon.icon, users_icon.color, unix_timestamp(users_online.timestamp) as timestamp,
+        users_season.id_season AS seasonId, users_season.active
+        FROM users
+        INNER JOIN users_season ON users.id = users_season.id_user
+        AND users_season.id_season = ?
+        LEFT JOIN users_icon ON users.id = users_icon.id_user
+        LEFT JOIN users_online ON users.id = users_online.id_user`,
+      [season]
+    )) as IUser[];
+
+    const extraBetsCounts = await this.getExtraBetsCounts(season);
+
+    return rows.map((row) => ({ ...row, extraBetsCount: extraBetsCounts.get(row.id) ?? 0 }));
+  }
+
+  async getExtraBetsCounts(season: number) {
+    const rows = (await db.query(`SELECT SQL_NO_CACHE id_user, json FROM extra_bets_new WHERE id_season = ?`, [
+      season
+    ])) as { id_user: number; json: string }[];
+
+    const counts = new Map<number, number>();
+
+    for (const row of rows) {
+      const parsed = JSON.parse(row.json) as Record<string, unknown>;
+      const count = Object.values(parsed).reduce(
+        (total: number, value) => total + (Array.isArray(value) ? value.length : 1),
+        0
+      );
+      counts.set(row.id_user, (counts.get(row.id_user) ?? 0) + count);
+    }
+
+    return counts;
+  }
+
   async getBySeason(season: number) {
     const rows = (await db.query(
       `SELECT SQL_NO_CACHE users.id, users.login as email, users.name, users.full_name as fullName,
         users_icon.icon, users_icon.color, unix_timestamp(users_online.timestamp) as timestamp,
-        users_season.id AS seasonId
+        users_season.id_season AS seasonId, users_season.active
         FROM users
-        INNER JOIN users_season ON users.id = users_season.id_user AND users_season.id_season = ?
+        INNER JOIN users_season ON users.id = users_season.id_user
+        AND users_season.id_season = ? AND users_season.active = 1
         LEFT JOIN users_icon ON users.id = users_icon.id_user
         LEFT JOIN users_online ON users.id = users_online.id_user`,
       [season]
@@ -81,7 +119,7 @@ export class UserService {
   }
 
   async isUsernameValid(name: string, userId?: number) {
-    const [rows] = (await db.query(`SELECT SQL_NO_CACHE COUNT(*) as count FROM users WHERE name = ? AND id <> ?`, [
+    const [rows] = (await db.query(`SELECT COUNT(*) as count FROM users WHERE name = ? AND id <> ?`, [
       name,
       userId
     ])) as ICount[];
@@ -91,13 +129,15 @@ export class UserService {
 
   async login(email: string) {
     const rows = (await db.query(
-      `SELECT SQL_NO_CACHE users.id, users.login as email, users.name, users.full_name as fullName,
-        users_icon.icon, users_icon.color, users.status, users.password
+      `SELECT users.id, users.login as email, users.name, users.full_name as fullName,
+        users_icon.icon, users_icon.color, users.password, users.admin,
+        users_season.id_season as seasonId, users_season.active
         FROM users
         JOIN users_season ON users.id = users_season.id_user
         JOIN users_icon ON users.id = users_icon.id_user
         WHERE users.login = ?
-        GROUP BY users.id`,
+        ORDER BY users_season.id_season DESC
+        LIMIT 1`,
       [email]
     )) as (IUser & { password: string })[];
 
@@ -111,6 +151,15 @@ export class UserService {
       hashedPassword,
       fullName,
       name
+    ])) as ResultSetHeader;
+
+    return rows;
+  }
+
+  async registerToCurrentSeason(id: number, season: string) {
+    const rows = (await db.query(`INSERT INTO users_season (id_user, id_season) VALUES (?, ?)`, [
+      id,
+      season
     ])) as ResultSetHeader;
 
     return rows;
@@ -177,6 +226,17 @@ export class UserService {
         SET password = ?
         WHERE id = ?`,
       [hashedPassword, id]
+    )) as ResultSetHeader;
+
+    return rows;
+  }
+
+  async updateUserActiveStatus(userId: string, season: number, newActiveStatus: boolean) {
+    const rows = (await db.query(
+      `UPDATE users_season
+        SET active = ?
+        WHERE id_user = ? AND id_season = ?`,
+      [newActiveStatus, userId, season]
     )) as ResultSetHeader;
 
     return rows;

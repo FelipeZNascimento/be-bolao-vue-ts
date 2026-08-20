@@ -56,6 +56,57 @@ export class UserController extends BaseController {
     });
   };
 
+  registerToCurrentSeason = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    await this.handleRequest(req, res, next, async () => {
+      const season = process.env.SEASON;
+      if (!season) {
+        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
+      }
+
+      const user = req.session.user;
+      if (!user) {
+        throw new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED);
+      }
+
+      const response = await this.userService.registerToCurrentSeason(user.id, season);
+      if (!response || response.affectedRows === 0) {
+        throw new AppError('Registro falhou', 500, ErrorCode.DB_ERROR);
+      }
+
+      console.log('registerToCurrentSeason', season, parseInt(season));
+      console.log(req.session.user);
+      req.session.user = { ...user, active: true, seasonId: parseInt(season) };
+      console.log(req.session.user);
+      return response;
+    });
+  };
+
+  toggleActiveStatus = async (req: Request<{ userId: string }>, res: Response, next: NextFunction): Promise<void> => {
+    await this.handleRequest(req, res, next, async () => {
+      const season = process.env.SEASON;
+      const userId = req.params.userId;
+
+      if (!season || !userId) {
+        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
+      }
+
+      const user = await this.userService.getById(parseInt(userId));
+      await this.userService.updateUserActiveStatus(userId, parseInt(season), !user.active);
+      return await this.userService.getAdmin(parseInt(season));
+    });
+  };
+
+  getAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    await this.handleRequest(req, res, next, async () => {
+      const season = process.env.SEASON;
+      if (!season) {
+        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
+      }
+
+      return await this.userService.getAdmin(parseInt(season));
+    });
+  };
+
   getAll = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       const season = process.env.SEASON;
@@ -103,6 +154,7 @@ export class UserController extends BaseController {
         const favorites = await this.userService.getFavorites(req.session.user.id);
         return { ...req.session.user, favorites };
       }
+
       const reqBody = req.body as { email: string; password: string };
       const { email, password } = reqBody;
 
