@@ -23,6 +23,7 @@
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "prepare": "husky",
+    "migrate:hash-passwords": "tsx --env-file .env scripts/hashExistingPasswords.ts",
     "check": "run-s type-check \"lint\" \"format:check\" \"test:run\""
   },
   "repository": {
@@ -46,6 +47,7 @@
   },
   "homepage": "https://github.com/FelipeZNascimento/be-bolao-vue-ts#readme",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "express-mysql-session": "^3.0.3",
@@ -59,6 +61,7 @@
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.2",
+    "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/express-mysql-session": "^3.0.3",

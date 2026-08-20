@@ -3,7 +3,7 @@ import config from '#database/config.js';
 import { connection } from '#database/db.js';
 import matchRoutes from '#match/match.routes.js';
 import { errorHandler } from '#middlewares/errorHandler.js';
-import { cache, middleware } from '#middlewares/middlewares.js';
+import { cache, middleware, updateLastOnline } from '#middlewares/middlewares.js';
 import rankingRoutes from '#ranking/ranking.routes.js';
 import seasonRoutes from '#season/season.routes.js';
 import teamRoutes from '#team/team.routes.js';
@@ -75,6 +75,7 @@ const corsOptions = {
 };
 app.use(express.json());
 app.use(cors(corsOptions));
+app.use(updateLastOnline);
 app.use('/bolaonflv2/season', seasonRoutes);
 app.use('/bolaonflv2/bet', betRoutes);
 app.use('/bolaonflv2/ranking', rankingRoutes);

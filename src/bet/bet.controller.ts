@@ -7,7 +7,6 @@ import { MatchService } from '#match/match.service.js';
 import { BaseController } from '#shared/base.controller.js';
 import { TeamService } from '#team/team.service.js';
 import { getFromCacheOrFetch } from '#team/team.util.js';
-import { UserService } from '#user/user.service.js';
 import { AppError } from '#utils/appError.js';
 import { ErrorCode } from '#utils/errorCodes.js';
 import { NextFunction, Request, Response } from 'express';
@@ -16,7 +15,6 @@ export class BetController extends BaseController {
   constructor(
     private betService: BetService,
     private matchService: MatchService,
-    private userService: UserService,
     private teamService: TeamService
   ) {
     super();
@@ -36,7 +34,6 @@ export class BetController extends BaseController {
 
       let activeProfileExtraBets: IExtraBet[] = [];
       if (req.session.user) {
-        void this.userService.updateLastOnlineTime(req.session.user.id);
         activeProfileExtraBets = await this.betService.getActiveProfileExtras(req.session.user.id, parseInt(season));
       }
 
@@ -68,10 +65,6 @@ export class BetController extends BaseController {
 
   getExtrasResults = async (req: Request<{ season: string }>, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      if (req.session.user) {
-        void this.userService.updateLastOnlineTime(req.session.user.id);
-      }
-
       const season = req.params.season || process.env.SEASON;
       const seasonStart = process.env.SEASON_START;
 
@@ -107,8 +100,6 @@ export class BetController extends BaseController {
 
       const user = req.session.user;
 
-      void this.userService.updateLastOnlineTime(user.id);
-
       const reqBody = req.body as { betValue: number; matchId: number };
       const { betValue, matchId } = reqBody;
 
@@ -135,8 +126,6 @@ export class BetController extends BaseController {
       const nowTimestamp = Math.floor(new Date().getTime() / 1000);
       const seasonStart = process.env.SEASON_START;
       const season = process.env.SEASON;
-
-      void this.userService.updateLastOnlineTime(user.id);
 
       const reqBody = req.body as Record<string, null | number | number[]>;
       const newExtraBets = reqBody;
