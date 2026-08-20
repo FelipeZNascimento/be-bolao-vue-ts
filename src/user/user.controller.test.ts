@@ -13,11 +13,11 @@ const mockUserService = {
   getByEmail: vi.fn(),
   getById: vi.fn(),
   getBySeason: vi.fn(),
+  getFavorites: vi.fn(),
   login: vi.fn(),
   register: vi.fn(),
   setIcons: vi.fn(),
   setOnCurrentSeason: vi.fn(),
-  updateLastOnlineTime: vi.fn(),
   updatePassword: vi.fn(),
   updatePasswordFromToken: vi.fn(),
   updateProfile: vi.fn()
@@ -26,6 +26,13 @@ const mockUserService = {
 const mockMailerService = {
   sendPasswordResetEmail: vi.fn()
 };
+
+const mockBcrypt = vi.hoisted(() => ({
+  compare: vi.fn(),
+  hash: vi.fn()
+}));
+
+vi.mock('bcrypt', () => ({ default: mockBcrypt }));
 
 const mockCachedInfo = vi.hoisted(() => ({
   del: vi.fn(),
@@ -124,6 +131,7 @@ describe('UserController', () => {
 
   it('getActiveProfile: should return user profile', async () => {
     mockUserService.getById.mockResolvedValue(mockUser);
+    mockUserService.getFavorites.mockResolvedValue([]);
     const { next, req, res } = getMockReqResSession(mockUser);
 
     await controller.getActiveProfile(req, res, next);
@@ -189,14 +197,25 @@ describe('UserController', () => {
     expect(next).toHaveBeenCalledWith(expect.any(AppError));
   });
 
-  it('login: should set session user and update last online', async () => {
-    mockUserService.login.mockResolvedValue([mockUser]);
+  it('login: should throw if password is invalid', async () => {
+    mockUserService.login.mockResolvedValue([{ ...mockUser, password: 'hashed' }]);
+    mockBcrypt.compare.mockResolvedValue(false);
+    const { next, req, res } = getMockReqResSession();
+    req.body = { email: 'a', password: 'b' };
+
+    await controller.login(req, res, next);
+    expect(next).toHaveBeenCalledWith(expect.any(AppError));
+  });
+
+  it('login: should set session user', async () => {
+    mockUserService.login.mockResolvedValue([{ ...mockUser, password: 'hashed' }]);
+    mockBcrypt.compare.mockResolvedValue(true);
+    mockUserService.getFavorites.mockResolvedValue([]);
     const { next, req, res } = getMockReqResSession();
     req.body = { email: 'a', password: 'b' };
 
     await controller.login(req, res, next);
     expect(req.session.user).toEqual(mockUser);
-    expect(mockUserService.updateLastOnlineTime).toHaveBeenCalledWith(1);
   });
 
   it('logout: should clear session user and regenerate session', async () => {

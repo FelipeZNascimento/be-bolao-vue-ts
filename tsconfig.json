@@ -17,5 +17,5 @@
     }
   },
   "include": ["**/*.ts"],
-  "exclude": ["dist"]
+  "exclude": ["dist", "scripts"]
 }

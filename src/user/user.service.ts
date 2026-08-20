@@ -2,7 +2,10 @@ import type { IUser } from '#user/user.types.js';
 
 import db from '#database/db.js';
 import { ICount } from '#shared/shared.types.js';
+import bcrypt from 'bcrypt';
 import { ResultSetHeader } from 'mysql2/promise';
+
+const BCRYPT_SALT_ROUNDS = 12;
 
 export class UserService {
   async getByEmail(email: string) {
@@ -15,7 +18,8 @@ export class UserService {
         LEFT JOIN users_icon ON users.id = users_icon.id_user
         LEFT JOIN users_online ON users.id = users_online.id_user
         WHERE users.login = ?
-        GROUP BY users.id`,
+        ORDER BY seasonId DESC
+        LIMIT 1`,
       [email]
     )) as IUser[];
 
@@ -55,6 +59,18 @@ export class UserService {
     return rows;
   }
 
+  async getFavorites(id: number) {
+    const [row] = (await db.query(`SELECT SQL_NO_CACHE favorites FROM favorites WHERE user_id = ?`, [id])) as {
+      favorites: string;
+    }[];
+
+    if (!row?.favorites) {
+      return [];
+    }
+
+    return JSON.parse(row.favorites) as string[];
+  }
+
   async isEmailValid(email: string, userId?: number) {
     const [rows] = (await db.query(`SELECT SQL_NO_CACHE COUNT(*) as count FROM users WHERE login = ? AND id <> ?`, [
       email,
@@ -73,26 +89,26 @@ export class UserService {
     return rows.count === 0;
   }
 
-  async login(email: string, password: string) {
+  async login(email: string) {
     const rows = (await db.query(
       `SELECT SQL_NO_CACHE users.id, users.login as email, users.name, users.full_name as fullName,
-        users_icon.icon, users_icon.color, users.status
+        users_icon.icon, users_icon.color, users.status, users.password
         FROM users
-        JOIN users_season ON users.id = users_season.id_user 
+        JOIN users_season ON users.id = users_season.id_user
         JOIN users_icon ON users.id = users_icon.id_user
         WHERE users.login = ?
-        AND users.password = ?
         GROUP BY users.id`,
-      [email, password]
-    )) as IUser[];
+      [email]
+    )) as (IUser & { password: string })[];
 
     return rows;
   }
 
   async register(email: string, fullName: string, name: string, password: string) {
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
     const rows = (await db.query(`INSERT INTO users (login, password, full_name, name) VALUES (?, ?, ?, ?)`, [
       email,
-      password,
+      hashedPassword,
       fullName,
       name
     ])) as ResultSetHeader;
@@ -118,6 +134,16 @@ export class UserService {
     return rows;
   }
 
+  async updateFavorites(id: number, favorites: string[]) {
+    const serializedFavorites = JSON.stringify(favorites);
+    const rows = (await db.query(
+      `INSERT INTO favorites (user_id, favorites) VALUES (?, ?) ON DUPLICATE KEY UPDATE favorites = ?`,
+      [id, serializedFavorites, serializedFavorites]
+    )) as ResultSetHeader;
+
+    return rows;
+  }
+
   async updateLastOnlineTime(id: number) {
     if (id === 0) {
       return;
@@ -131,24 +157,38 @@ export class UserService {
     return rows;
   }
 
-  async updatePassword(newPassword: string, currentPassword: string, id: number) {
+  async updatePassword(currentPassword: string, newPassword: string, id: number): Promise<ResultSetHeader | null> {
+    const [row] = (await db.query(`SELECT SQL_NO_CACHE password FROM users WHERE id = ?`, [id])) as {
+      password: string;
+    }[];
+
+    if (!row) {
+      return null;
+    }
+
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, row.password);
+    if (!isCurrentPasswordValid) {
+      return null;
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
     const rows = (await db.query(
-      `UPDATE users 
+      `UPDATE users
         SET password = ?
-        WHERE id = ?
-        AND password = ?`,
-      [newPassword, id, currentPassword]
+        WHERE id = ?`,
+      [hashedPassword, id]
     )) as ResultSetHeader;
 
     return rows;
   }
 
   async updatePasswordFromToken(newPassword: string, id: number) {
+    const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
     const rows = (await db.query(
-      `UPDATE users 
+      `UPDATE users
         SET password = ?
         WHERE id = ?`,
-      [newPassword, id]
+      [hashedPassword, id]
     )) as ResultSetHeader;
 
     return rows;

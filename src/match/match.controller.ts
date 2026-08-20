@@ -35,11 +35,7 @@ export class MatchController extends BaseController {
     next: NextFunction
   ): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      let user = null;
-      if (req.session.user) {
-        user = req.session.user;
-        void this.userService.updateLastOnlineTime(req.session.user.id);
-      }
+      let user = req.session.user;
 
       const season = req.params.season || process.env.SEASON;
       let week: number | undefined = parseInt(req.params.week) || cachedInfo.get(CACHE_KEYS.CURRENT_WEEK);

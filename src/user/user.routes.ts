@@ -16,10 +16,12 @@ router.post('/preferences', userController.updatePreferences);
 router.post('/password', userController.updatePassword);
 router.post('/password-token', userController.updatePasswordFromToken);
 router.post('/forgot-password', userController.forgotPassword);
+router.post('/favorites', userController.updateFavorites);
 
 // Get routes
 router.get('/logout', userController.logout);
 router.get('/activeProfile', userController.getActiveProfile);
+router.get('/favorites', userController.getFavorites);
 router.get('/:userId', userController.getById);
 router.get('/', userController.getAll);
 

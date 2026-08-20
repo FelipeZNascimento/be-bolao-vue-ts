@@ -1,6 +1,7 @@
 export interface IUser {
   color: string;
   email: string;
+  favorites?: string[];
   fullName: string;
   icon: string;
   id: number;

@@ -8,6 +8,7 @@ import { isRejected } from '#utils/apiResponse.js';
 import { AppError } from '#utils/appError.js';
 import { cachedInfo } from '#utils/dataCache.js';
 import { ErrorCode } from '#utils/errorCodes.js';
+import bcrypt from 'bcrypt';
 import { NextFunction, Request, Response } from 'express';
 
 // Extend express-session types to include 'user' property
@@ -50,7 +51,8 @@ export class UserController extends BaseController {
       }
 
       const userResponse: IUser = await this.userService.getById(user.id);
-      return userResponse;
+      const favorites = await this.userService.getFavorites(user.id);
+      return { ...userResponse, favorites };
     });
   };
 
@@ -63,6 +65,17 @@ export class UserController extends BaseController {
 
       const response: IUser[] = await this.userService.getBySeason(parseInt(season));
       return response;
+    });
+  };
+
+  getFavorites = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    await this.handleRequest(req, res, next, async () => {
+      if (!req.session.user) {
+        throw new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED);
+      }
+
+      const user = req.session.user;
+      return await this.userService.getFavorites(user.id);
     });
   };
 
@@ -87,7 +100,8 @@ export class UserController extends BaseController {
   login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       if (req.session.user) {
-        return req.session.user;
+        const favorites = await this.userService.getFavorites(req.session.user.id);
+        return { ...req.session.user, favorites };
       }
       const reqBody = req.body as { email: string; password: string };
       const { email, password } = reqBody;
@@ -96,22 +110,25 @@ export class UserController extends BaseController {
         throw new AppError('Credenciais inválidas', 401, ErrorCode.UNAUTHORIZED);
       }
 
-      const response: IUser[] = await this.userService.login(email, password);
-      if (response.length > 0) {
-        const user: IUser | null = response[0];
-        req.session.user = user;
-        await this.userService.updateLastOnlineTime(user.id);
-        return user;
-      } else {
+      const response = await this.userService.login(email);
+      if (response.length === 0) {
         throw new AppError('Credenciais inválidas', 401, ErrorCode.UNAUTHORIZED);
       }
+
+      const { password: hashedPassword, ...user } = response[0];
+      const isPasswordValid = await bcrypt.compare(password, hashedPassword);
+      if (!isPasswordValid) {
+        throw new AppError('Credenciais inválidas', 401, ErrorCode.UNAUTHORIZED);
+      }
+
+      req.session.user = user;
+      const favorites = await this.userService.getFavorites(user.id);
+      return { ...user, favorites };
     });
   };
 
   logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      await this.userService.updateLastOnlineTime(req.session.user?.id ?? 0);
-
       req.session.user = null;
       req.session.save(function (err) {
         if (err) next(err);
@@ -169,15 +186,35 @@ export class UserController extends BaseController {
         throw new AppError('Base de dados inacessível', 204, ErrorCode.DB_ERROR);
       }
 
-      const loginResponse: IUser[] = await this.userService.login(email, password);
+      const loginResponse = await this.userService.login(email);
 
       if (loginResponse.length > 0) {
-        req.session.user = loginResponse[0];
-        void this.userService.updateLastOnlineTime(loginResponse[0].id);
-        return loginResponse[0];
+        const { password: _hashedPassword, ...user } = loginResponse[0];
+        req.session.user = user;
+        const favorites = await this.userService.getFavorites(user.id);
+        return { ...user, favorites };
       }
 
       return;
+    });
+  };
+
+  updateFavorites = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    await this.handleRequest(req, res, next, async () => {
+      if (!req.session.user) {
+        throw new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED);
+      }
+
+      const user = req.session.user;
+      const reqBody = req.body as { favorites: string[] };
+      const { favorites } = reqBody;
+
+      if (!Array.isArray(favorites)) {
+        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
+      }
+
+      await this.userService.updateFavorites(user.id, favorites);
+      return await this.userService.getFavorites(user.id);
     });
   };
 
@@ -195,10 +232,8 @@ export class UserController extends BaseController {
         throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
-      void this.userService.updateLastOnlineTime(user.id);
-
       const updatePasswordResponse = await this.userService.updatePassword(currentPassword, newPassword, user.id);
-      if (updatePasswordResponse.affectedRows === 0) {
+      if (!updatePasswordResponse || updatePasswordResponse.affectedRows === 0) {
         throw new AppError('Senha incorreta', 409, ErrorCode.VALIDATION_ERROR);
       }
 
@@ -208,14 +243,13 @@ export class UserController extends BaseController {
 
   updatePasswordFromToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      const reqBody = req.body as { email: string; newPassword: string; token: string };
-      const { email, newPassword, token } = reqBody;
+      const reqBody = req.body as { email: string; password: string; token: string };
+      const { email, password, token } = reqBody;
 
-      if (!email || !token || !newPassword) {
+      if (!email || !token || !password) {
         throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
-      // void this.userService.updateLastOnlineTime(user.id);
       const cachedToken = cachedInfo.get(`PASSWORD_RESET_${email}`);
       if (cachedToken !== token) {
         throw new AppError('Token inválido ou expirado', 409, ErrorCode.VALIDATION_ERROR);
@@ -224,7 +258,7 @@ export class UserController extends BaseController {
       const user = await this.userService.getByEmail(email);
 
       cachedInfo.del(`PASSWORD_RESET_${email}`);
-      return await this.userService.updatePasswordFromToken(newPassword, user.id);
+      return await this.userService.updatePasswordFromToken(password, user.id);
     });
   };
 
@@ -235,8 +269,6 @@ export class UserController extends BaseController {
       }
 
       const user = req.session.user;
-
-      void this.userService.updateLastOnlineTime(user.id);
 
       const reqBody = req.body as { color: string; icon: string };
       const { color, icon } = reqBody;
@@ -252,7 +284,6 @@ export class UserController extends BaseController {
       }
 
       const user = req.session.user;
-      void this.userService.updateLastOnlineTime(user.id);
 
       const reqBody = req.body as { email: string; name: string; username: string };
       const { email, name, username } = reqBody;
