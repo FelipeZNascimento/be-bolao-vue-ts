@@ -11,7 +11,10 @@ export class TeamService {
       return cachedTeams;
     }
 
-    const rows: ITeam[] = (await db.query(`SELECT SQL_NO_CACHE * FROM teams`, [])) as ITeam[];
+    const rows: ITeam[] = (await db.query(
+      `SELECT id, espn_id as espnId, name, alias, conference, division, code, background, foreground FROM teams`,
+      []
+    )) as ITeam[];
     cachedInfo.set(CACHE_KEYS.TEAMS, rows);
     return rows;
   }
