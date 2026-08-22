@@ -14,6 +14,8 @@ const mockUserService = {
   getById: vi.fn(),
   getBySeason: vi.fn(),
   getFavorites: vi.fn(),
+  getSeasonsRanking: vi.fn(),
+  getUserRecords: vi.fn(),
   login: vi.fn(),
   register: vi.fn(),
   setIcons: vi.fn(),
@@ -180,6 +182,56 @@ describe('UserController', () => {
 
     await controller.getById(req, res, next);
     expect(mockUserService.getById).toHaveBeenCalledWith(2);
+  });
+
+  it('getRecords: should throw if userId is missing', async () => {
+    const { next, req, res } = getMockReqResSession<{ userId: string }>();
+    req.params = {} as unknown as { userId: string };
+
+    await controller.getRecords(req, res, next);
+    expect(next).toHaveBeenCalledWith(expect.any(AppError));
+  });
+
+  it('getRecords: should return cached records if present', async () => {
+    const cached = { seasons: [] };
+    mockCachedInfo.get.mockReturnValue(cached);
+    const { next, req, res } = getMockReqResSession<{ userId: string }>();
+    req.params = { userId: '2' };
+
+    await controller.getRecords(req, res, next);
+    expect(mockUserService.getUserRecords).not.toHaveBeenCalled();
+  });
+
+  it('getRecords: should fetch, cache and return records', async () => {
+    const records = { seasons: [] };
+    mockCachedInfo.get.mockReturnValue(undefined);
+    mockUserService.getUserRecords.mockResolvedValue(records);
+    const { next, req, res } = getMockReqResSession<{ userId: string }>();
+    req.params = { userId: '2' };
+
+    await controller.getRecords(req, res, next);
+    expect(mockUserService.getUserRecords).toHaveBeenCalledWith(2);
+    expect(mockCachedInfo.set).toHaveBeenCalledWith('USER_RECORDS_2', records, 60 * 60 * 24);
+  });
+
+  it('getSeasonsRecords: should return cached records if present', async () => {
+    const cached = { all: [], bySeason: {}, byUser: {} };
+    mockCachedInfo.get.mockReturnValue(cached);
+    const { next, req, res } = getMockReqResSession();
+
+    await controller.getSeasonsRecords(req, res, next);
+    expect(mockUserService.getSeasonsRanking).not.toHaveBeenCalled();
+  });
+
+  it('getSeasonsRecords: should fetch, cache and return records', async () => {
+    const records = { all: [], bySeason: {}, byUser: {} };
+    mockCachedInfo.get.mockReturnValue(undefined);
+    mockUserService.getSeasonsRanking.mockResolvedValue(records);
+    const { next, req, res } = getMockReqResSession();
+
+    await controller.getSeasonsRecords(req, res, next);
+    expect(mockUserService.getSeasonsRanking).toHaveBeenCalled();
+    expect(mockCachedInfo.set).toHaveBeenCalledWith('SEASONS_RANKING_RECORDS', records, 60 * 60 * 24);
   });
 
   it('login: should throw if credentials are missing', async () => {

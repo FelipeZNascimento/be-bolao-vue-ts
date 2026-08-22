@@ -72,6 +72,7 @@ export const EXTRA_BETS_MAPPING = {
 const seasonMaxPoints = (season: number, week: number): number => {
   if (season >= 1 && season <= 8) {
     if (week >= 0 && week <= 17) {
+      // Regular season (17 weeks)
       return 10;
     } else if (week === 18 || week === 19) {
       return 20;
@@ -82,6 +83,7 @@ const seasonMaxPoints = (season: number, week: number): number => {
     }
   } else {
     if (week >= 0 && week <= 18) {
+      // Regular season (18 weeks)
       return 10;
     } else if (week === 19 || week === 20) {
       return 20;

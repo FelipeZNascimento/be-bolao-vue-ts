@@ -28,6 +28,10 @@ router.get('/favorites', userController.getFavorites);
 router.get('/admin/', userController.getAdmin);
 router.get('/admin/toggle-active-status/:userId', userController.toggleActiveStatus);
 
+// Records
+router.get('/records/seasons', userController.getSeasonsRecords);
+router.get('/records/:userId', userController.getRecords);
+
 router.get('/:userId', userController.getById);
 router.get('/', userController.getAll);
 

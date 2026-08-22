@@ -123,7 +123,7 @@ export const buildSeasonUserRanking = (
  *
  * @return: The ranking line for that user in that set of matches.
  */
-const calculateUserPoints = (user: IUser, matches: IMatch[], bets: IBet[], totalPossiblePoints: number) => {
+export const calculateUserPoints = (user: IUser, matches: IMatch[], bets: IBet[], totalPossiblePoints: number) => {
   let points = 0;
   let bullseyeCount = 0;
   let winnersCount = 0;

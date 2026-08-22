@@ -24,6 +24,7 @@
     "format:check": "oxfmt --check .",
     "prepare": "husky",
     "migrate:hash-passwords": "tsx --env-file .env scripts/hashExistingPasswords.ts",
+    "season:populate-ranking": "tsx --env-file .env scripts/populateSeasonRanking.ts",
     "check": "run-s type-check \"lint\" \"format:check\" \"test:run\""
   },
   "repository": {

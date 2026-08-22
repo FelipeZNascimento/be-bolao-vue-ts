@@ -130,6 +130,41 @@ export class UserController extends BaseController {
     });
   };
 
+  getRecords = async (req: Request<{ userId: string }>, res: Response, next: NextFunction): Promise<void> => {
+    await this.handleRequest(req, res, next, async () => {
+      const userId = req.params.userId;
+      if (!userId) {
+        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
+      }
+
+      const cacheKey = `USER_RECORDS_${userId}`;
+      const cachedRecords = cachedInfo.get(cacheKey);
+      if (cachedRecords) {
+        return cachedRecords;
+      }
+
+      const records = await this.userService.getUserRecords(parseInt(userId));
+      cachedInfo.set(cacheKey, records, 60 * 60 * 24); // Cache for 24 hours
+
+      return records;
+    });
+  };
+
+  getSeasonsRecords = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    await this.handleRequest(req, res, next, async () => {
+      const cacheKey = 'SEASONS_RANKING_RECORDS';
+      const cachedRecords = cachedInfo.get(cacheKey);
+      if (cachedRecords) {
+        return cachedRecords;
+      }
+
+      const records = await this.userService.getSeasonsRanking();
+      cachedInfo.set(cacheKey, records, 60 * 60 * 24); // Cache for 24 hours
+
+      return records;
+    });
+  };
+
   getById = async (req: Request<{ userId: string }>, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       const season = process.env.SEASON;
