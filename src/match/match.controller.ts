@@ -196,6 +196,8 @@ export class MatchController extends BaseController {
         throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
+      console.info('[MatchController.updateFromKey] affectedRows:', updateResponse.affectedRows);
+
       // If any match was updated, we need to update ranking and send websocket message
       if (updateResponse.affectedRows > 0) {
         const rankingController = new RankingController(
@@ -212,6 +214,8 @@ export class MatchController extends BaseController {
         );
 
         const currentWeek = cachedInfo.get<number>(CACHE_KEYS.CURRENT_WEEK);
+        console.info('[MatchController.updateFromKey] season:', season, 'currentWeek:', currentWeek);
+
         // Fetch updated matches for the week
         if (season && currentWeek) {
           const updatedMatches = await this.matchService.getBySeasonWeek(parseInt(season), currentWeek);
@@ -220,9 +224,15 @@ export class MatchController extends BaseController {
           const user = req.session.user ?? null;
 
           const matchesObject = mergeBetsToMatches(teams, updatedMatches, startedMatchesBets, [], user?.id);
-          this.websocketInstance.broadcast(
-            JSON.stringify({ matches: matchesObject, ranking: { seasonRanking, weeklyRanking }, week: week })
-          );
+          const payload = JSON.stringify({
+            matches: matchesObject,
+            ranking: { seasonRanking, weeklyRanking },
+            week: week
+          });
+          console.info('[MatchController.updateFromKey] broadcasting payload, length:', payload.length);
+          this.websocketInstance.broadcast(payload);
+        } else {
+          console.warn('[MatchController.updateFromKey] skipping broadcast: missing season or currentWeek');
         }
       }
       return updateResponse;

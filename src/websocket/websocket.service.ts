@@ -25,8 +25,25 @@ export class WebSocketService {
   }
 
   public broadcast(message: string) {
+    console.info(
+      `[WebSocketService] broadcast called. Connected clients: ${this.wss.clients.size.toString()}. Message length: ${message.length.toString()}`
+    );
+
     this.wss.clients.forEach((client) => {
-      client.send(message);
+      console.info(
+        `[WebSocketService] client readyState: ${client.readyState.toString()} (OPEN=${WebSocket.OPEN.toString()})`
+      );
+
+      if (client.readyState !== WebSocket.OPEN) {
+        console.warn('[WebSocketService] skipping client, socket not open');
+        return;
+      }
+
+      client.send(message, (err) => {
+        if (err) {
+          console.error('[WebSocketService] error sending message to client:', err);
+        }
+      });
     });
   }
 
@@ -34,13 +51,25 @@ export class WebSocketService {
     console.log('Initializing wss with server!');
     this.wss = new WebSocketServer({ server });
 
-    this.wss.on('connection', (ws: WebSocket) => {
-      console.log('Stablishing websocket connection');
+    this.wss.on('error', (err) => {
+      console.error('[WebSocketService] server error:', err);
+    });
+
+    this.wss.on('connection', (ws: WebSocket, req) => {
+      console.log(
+        `Stablishing websocket connection from ${req.socket.remoteAddress ?? 'unknown'}, url: ${req.url ?? 'unknown'}, origin: ${req.headers.origin ?? 'unknown'}`
+      );
+      console.info(`[WebSocketService] total connected clients: ${this.wss.clients.size.toString()}`);
       // this.metricsService.recordWebsocketConnection(true);
 
-      ws.on('close', () => {
-        console.info('Closing websocket connection');
+      ws.on('close', (code, reason) => {
+        console.info(`Closing websocket connection. code: ${code.toString()}, reason: ${reason.toString()}`);
+        console.info(`[WebSocketService] total connected clients: ${this.wss.clients.size.toString()}`);
         // this.metricsService.recordWebsocketConnection(false);
+      });
+
+      ws.on('error', (err) => {
+        console.error('[WebSocketService] client socket error:', err);
       });
 
       ws.on('message', (message: string) => {
