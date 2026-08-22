@@ -1,6 +1,12 @@
+import type { ISeasonRankingRow, IUserRecords, IUserSeasonPoints, IUserWeekRecord } from '#user/user.types.js';
 import type { IUser } from '#user/user.types.js';
 
+import { BetService } from '#bet/bet.service.js';
+import { maxPointsPerBet } from '#bet/bet.utils.js';
 import db from '#database/db.js';
+import { MatchService } from '#match/match.service.js';
+import { calculateMaxPoints, calculateUserPoints, isWeekLocked } from '#ranking/ranking.utils.js';
+import { getSeasonLabel } from '#season/season.utils.js';
 import { ICount } from '#shared/shared.types.js';
 import bcrypt from 'bcrypt';
 import { ResultSetHeader } from 'mysql2/promise';
@@ -8,6 +14,11 @@ import { ResultSetHeader } from 'mysql2/promise';
 const BCRYPT_SALT_ROUNDS = 12;
 
 export class UserService {
+  constructor(
+    private betService: BetService = new BetService(),
+    private matchService: MatchService = new MatchService()
+  ) {}
+
   async getByEmail(email: string) {
     const [row] = (await db.query(
       `SELECT users.id, users.login as email, users.name, users.full_name as fullName,
@@ -97,6 +108,232 @@ export class UserService {
     )) as IUser[];
 
     return rows;
+  }
+
+  /**
+   * Reads a user's final ranking for a given season from the `seasons_ranking` cache table
+   * (populated by `scripts/populateSeasonRanking.ts` once a season is fully completed).
+   * Returns null if the season hasn't been cached yet, so callers can fall back to a live
+   * calculation.
+   */
+  async getCachedSeasonRanking(season: number, userId: number) {
+    const [row] = (await db.query(
+      `SELECT SQL_NO_CACHE percentage, points, bullseye, winner, total_bets as totalBets,
+        total_games as totalGames, position, total_participants as totalParticipants,
+        extras, total_possible_points as totalPossiblePoints, total_possible_extras as totalPossibleExtras
+        FROM seasons_ranking
+        WHERE id_season = ? AND id_user = ?`,
+      [season, userId]
+    )) as {
+      percentage: string;
+      points: number;
+      bullseye: number;
+      winner: number;
+      totalBets: number;
+      totalGames: number;
+      position: number;
+      totalParticipants: number;
+      extras: number;
+      totalPossiblePoints: number;
+      totalPossibleExtras: number | null;
+    }[];
+
+    if (!row) {
+      return null;
+    }
+
+    return { ...row, percentage: parseFloat(row.percentage) };
+  }
+
+  /**
+   * Reads every row from the `seasons_ranking` cache table (populated by
+   * `scripts/populateSeasonRanking.ts`), used to build the cross-season/cross-user records page.
+   * Each of the three views is sorted by percentage (descending); percentage is stored as a
+   * varchar in the database, so it's converted to a number before sorting.
+   */
+  async getSeasonsRanking() {
+    const rows = (await db.query(
+      `SELECT SQL_NO_CACHE seasons_ranking.id_season as season, seasons_ranking.id_user as userId,
+        seasons_ranking.percentage, seasons_ranking.points, seasons_ranking.bullseye, seasons_ranking.winner,
+        seasons_ranking.total_bets as totalBets, seasons_ranking.total_games as totalGames,
+        seasons_ranking.position, seasons_ranking.total_participants as totalParticipants,
+        seasons_ranking.extras, seasons_ranking.total_possible_points as totalPossiblePoints,
+        seasons_ranking.total_possible_extras as totalPossibleExtras,
+        users.name, users_icon.icon, users_icon.color
+        FROM seasons_ranking
+        INNER JOIN users ON users.id = seasons_ranking.id_user
+        LEFT JOIN users_icon ON users_icon.id_user = seasons_ranking.id_user`,
+      []
+    )) as (Omit<ISeasonRankingRow, 'season' | 'user'> & {
+      color: string;
+      icon: string;
+      name: string;
+      season: number;
+      userId: number;
+    })[];
+
+    const sortedRows = rows
+      .map(({ color, icon, name, season, userId, ...row }) => ({
+        ...row,
+        season: { id: season, label: getSeasonLabel(season) },
+        user: { color, icon, id: userId, name }
+      }))
+      .sort((a, b) => parseFloat(b.percentage) - parseFloat(a.percentage));
+
+    const bySeason = new Map<number, ISeasonRankingRow[]>();
+    const byUser = new Map<number, ISeasonRankingRow[]>();
+
+    for (const row of sortedRows) {
+      const seasonRows = bySeason.get(row.season.id) ?? [];
+      seasonRows.push(row);
+      bySeason.set(row.season.id, seasonRows);
+
+      const userRows = byUser.get(row.user.id) ?? [];
+      userRows.push(row);
+      byUser.set(row.user.id, userRows);
+    }
+
+    return {
+      all: sortedRows,
+      bySeason: Object.fromEntries(bySeason),
+      byUser: Object.fromEntries(byUser)
+    };
+  }
+
+  async getUserRecords(userId: number): Promise<IUserRecords> {
+    const seasons = await this.getUserSeasons(userId);
+
+    // Fetch all seasons' matches and any cached season_ranking rows in parallel, then discard
+    // seasons with no matches or not yet fully completed
+    const [seasonsMatches, cachedRankings] = await Promise.all([
+      Promise.all(seasons.map((season) => this.matchService.getBySeason(season))),
+      Promise.all(seasons.map((season) => this.getCachedSeasonRanking(season, userId)))
+    ]);
+    const validSeasons = seasons
+      .map((season, index) => ({ cachedRanking: cachedRankings[index], matches: seasonsMatches[index], season }))
+      .filter(({ matches }) => matches.length > 0 && isWeekLocked(matches));
+
+    const seasonPoints: IUserSeasonPoints[] = [];
+    const weekRecords: IUserWeekRecord[] = [];
+    let totalBullseyes = 0;
+    let totalBets = 0;
+    let totalWins = 0;
+
+    for (const { cachedRanking, matches, season } of validSeasons) {
+      const matchIds = matches.map((match) => match.id);
+      const dummyUser = { color: '', icon: '', id: userId, name: '', timestamp: 0 } as IUser;
+
+      let userBets;
+      let seasonBullseyes;
+      let seasonBets;
+      let seasonWins;
+
+      if (cachedRanking) {
+        userBets = await this.betService.getUserMatchesBetsByMatchIds(matchIds, userId);
+
+        seasonPoints.push({
+          percentage: cachedRanking.percentage,
+          points: cachedRanking.points,
+          position: cachedRanking.position,
+          season,
+          seasonLabel: getSeasonLabel(season),
+          totalParticipants: cachedRanking.totalParticipants,
+          totalPossiblePoints: cachedRanking.totalPossiblePoints
+        });
+        seasonBullseyes = cachedRanking.bullseye;
+        seasonBets = cachedRanking.totalBets;
+        seasonWins = cachedRanking.winner;
+      } else {
+        const [liveUserBets, seasonUsers, allBets] = await Promise.all([
+          this.betService.getUserMatchesBetsByMatchIds(matchIds, userId),
+          this.getBySeason(season),
+          this.betService.getStartedMatchesBetsByMatchIds(matchIds)
+        ]);
+        userBets = liveUserBets;
+
+        const seasonMaxPoints = calculateMaxPoints(season, matches);
+        const seasonRankingLine = calculateUserPoints(dummyUser, matches, userBets, seasonMaxPoints);
+
+        const seasonPercentage = seasonMaxPoints > 0 ? (seasonRankingLine.score.total / seasonMaxPoints) * 100 : 0;
+
+        const seasonRanking = seasonUsers
+          .map((seasonUser) => calculateUserPoints(seasonUser, matches, allBets, seasonMaxPoints))
+          .sort((a, b) => b.score.total - a.score.total || b.score.bullseye - a.score.bullseye);
+
+        const userPosition = seasonRanking.findIndex((rankingLine) => rankingLine.user.id === userId);
+
+        seasonPoints.push({
+          percentage: parseFloat(seasonPercentage.toFixed(1)),
+          points: seasonRankingLine.score.total,
+          position: userPosition === -1 ? seasonRanking.length + 1 : userPosition + 1,
+          season,
+          seasonLabel: getSeasonLabel(season),
+          totalParticipants: seasonRanking.length,
+          totalPossiblePoints: seasonMaxPoints
+        });
+        seasonBullseyes = seasonRankingLine.score.bullseye;
+        seasonBets = seasonRankingLine.betsCount;
+        seasonWins = seasonRankingLine.score.winner;
+      }
+
+      totalBullseyes += seasonBullseyes;
+      totalBets += seasonBets;
+      totalWins += seasonWins;
+
+      const weeks = [...new Set(matches.map((match) => match.week))];
+
+      weeks.forEach((week) => {
+        // Regular season weeks always award 10 max points per bet; playoff weeks award more
+        if (maxPointsPerBet.season(season, week) !== 10) {
+          return;
+        }
+
+        const weekMatches = matches.filter((match) => match.week === week);
+        const weekMaxPoints = calculateMaxPoints(season, weekMatches);
+        const weekRankingLine = calculateUserPoints(dummyUser, weekMatches, userBets, weekMaxPoints);
+
+        // Only consider weeks where the user bet on at least 90% of the matches
+        const minRequiredBets = Math.ceil(weekMatches.length * 0.9);
+        if (weekRankingLine.betsCount < minRequiredBets) {
+          return;
+        }
+
+        weekRecords.push({
+          bullseye: weekRankingLine.score.bullseye,
+          percentage: parseFloat(weekRankingLine.score.percentage),
+          points: weekRankingLine.score.total,
+          season,
+          seasonLabel: getSeasonLabel(season),
+          totalPossiblePoints: weekMaxPoints,
+          week
+        });
+      });
+    }
+
+    const sortedWeekRecords = weekRecords.sort((a, b) => b.percentage - a.percentage);
+    const topWeeks = sortedWeekRecords.slice(0, 20);
+    const bottomWeeks = sortedWeekRecords.slice(weekRecords.length - 20, weekRecords.length);
+
+    return {
+      seasons: seasonPoints,
+      topWeeks,
+      bottomWeeks,
+      totalBets,
+      totalBullseyes,
+      totalWins
+    };
+  }
+
+  async getUserSeasons(userId: number) {
+    const rows = (await db.query(
+      `SELECT SQL_NO_CACHE DISTINCT id_season as season
+        FROM users_season
+        WHERE id_user = ?
+        ORDER BY id_season ASC`,
+      [userId]
+    )) as { season: number }[];
+
+    return rows.map((row) => row.season);
   }
 
   async getFavorites(id: number) {

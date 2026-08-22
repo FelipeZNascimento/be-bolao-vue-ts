@@ -80,21 +80,41 @@ pnpm start:prod
 
 ## Scripts
 
-| Script              | Description                              |
-| ------------------- | ---------------------------------------- |
-| `pnpm dev`          | Run in watch mode with `tsx`             |
-| `pnpm build`        | Compile TypeScript to `dist/`            |
-| `pnpm start`        | Run the built app                        |
-| `pnpm start:prod`   | Run with PM2 in production               |
-| `pnpm test`         | Run tests with Vitest (watch mode)       |
-| `pnpm test:run`     | Run tests once                           |
-| `pnpm test:ui`      | Run tests with Vitest UI                 |
-| `pnpm coverage`     | Run tests with coverage report           |
-| `pnpm type-check`   | Type-check without emitting files        |
-| `pnpm lint`         | Lint the codebase                        |
-| `pnpm lint:fix`     | Lint and auto-fix issues                 |
-| `pnpm format`       | Format code with Prettier                |
-| `pnpm format:check` | Check formatting without writing changes |
+| Script                                  | Description                                            |
+| --------------------------------------- | ------------------------------------------------------ |
+| `pnpm dev`                              | Run in watch mode with `tsx`                           |
+| `pnpm build`                            | Compile TypeScript to `dist/`                          |
+| `pnpm start`                            | Run the built app                                      |
+| `pnpm start:prod`                       | Run with PM2 in production                             |
+| `pnpm test`                             | Run tests with Vitest (watch mode)                     |
+| `pnpm test:run`                         | Run tests once                                         |
+| `pnpm test:ui`                          | Run tests with Vitest UI                               |
+| `pnpm coverage`                         | Run tests with coverage report                         |
+| `pnpm type-check`                       | Type-check without emitting files                      |
+| `pnpm lint`                             | Lint the codebase                                      |
+| `pnpm lint:fix`                         | Lint and auto-fix issues                               |
+| `pnpm format`                           | Format code with Prettier                              |
+| `pnpm format:check`                     | Check formatting without writing changes               |
+| `pnpm season:populate-ranking <season>` | Populate `season_ranking` table for a completed season |
+
+## End of the Season
+
+Once a season is fully completed (all matches locked), populate the `season_ranking` table
+with that season's final, static ranking. This lets endpoints like `GET /user/records/:userId`
+read historical rankings from the table instead of recalculating them from raw matches/bets
+on every request.
+
+```bash
+pnpm season:populate-ranking <season>
+# Example: pnpm season:populate-ranking 13
+```
+
+Notes:
+
+- The script aborts without writing anything if the season has no matches or isn't fully locked yet.
+- Safe to re-run: rows are upserted (`INSERT ... ON DUPLICATE KEY UPDATE`) keyed by `(id_season, id_user)`.
+- Requires the `season_ranking` table (columns: `id_season`, `id_user`, `points`, `bullseye`,
+  `winner`, `total_bets`, `total_games`, `position`, `total_participants`, `extras`).
 
 ## License
 
