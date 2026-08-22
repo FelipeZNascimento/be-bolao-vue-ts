@@ -21,7 +21,13 @@ router.post('/favorites', userController.updateFavorites);
 // Get routes
 router.get('/logout', userController.logout);
 router.get('/activeProfile', userController.getActiveProfile);
+router.get('/season-register', userController.registerToCurrentSeason);
 router.get('/favorites', userController.getFavorites);
+
+// Admin routes
+router.get('/admin/', userController.getAdmin);
+router.get('/admin/toggle-active-status/:userId', userController.toggleActiveStatus);
+
 router.get('/:userId', userController.getById);
 router.get('/', userController.getAll);
 

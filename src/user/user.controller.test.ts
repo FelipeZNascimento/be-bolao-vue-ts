@@ -62,6 +62,8 @@ vi.mock('#utils/apiResponse.js', () => ({
 }));
 
 const mockUser: IUser = {
+  admin: false,
+  active: true,
   color: 'e',
   email: 'a',
   fullName: 'Full Name',
@@ -69,7 +71,7 @@ const mockUser: IUser = {
   id: 1,
   isOnline: false,
   name: 'b',
-  seasonId: 1,
+  seasonId: 14,
   timestamp: 123456789
 };
 
@@ -99,7 +101,7 @@ describe('UserController', () => {
       mockMailerService as unknown as MailerService
     );
     vi.clearAllMocks();
-    process.env.SEASON = '2024';
+    process.env.SEASON = '14';
   });
 
   afterEach(() => {
@@ -151,7 +153,7 @@ describe('UserController', () => {
     const { next, req, res } = getMockReqResSession();
 
     await controller.getAll(req, res, next);
-    expect(mockUserService.getBySeason).toHaveBeenCalledWith(2024);
+    expect(mockUserService.getBySeason).toHaveBeenCalledWith(14);
   });
 
   it('getById: should throw if season is missing', async () => {
@@ -168,7 +170,7 @@ describe('UserController', () => {
     req.params = {} as unknown as { userId: string };
 
     await controller.getById(req, res, next);
-    expect(mockUserService.getBySeason).toHaveBeenCalledWith(2024);
+    expect(mockUserService.getBySeason).toHaveBeenCalledWith(14);
   });
 
   it('getById: should return user by id', async () => {
