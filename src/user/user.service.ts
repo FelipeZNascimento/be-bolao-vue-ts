@@ -71,10 +71,12 @@ export class UserService {
 
     for (const row of rows) {
       const parsed = JSON.parse(row.json) as Record<string, unknown>;
-      const count = Object.values(parsed).reduce(
-        (total: number, value) => total + (Array.isArray(value) ? value.length : 1),
-        0
-      );
+      const count = Object.values(parsed).reduce((total: number, value) => {
+        if (value === null) {
+          return total;
+        }
+        return total + (Array.isArray(value) ? value.length : 1);
+      }, 0);
       counts.set(row.id_user, (counts.get(row.id_user) ?? 0) + count);
     }
 
