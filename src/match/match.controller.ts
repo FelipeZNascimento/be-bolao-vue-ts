@@ -217,7 +217,7 @@ export class MatchController extends BaseController {
         console.info('[MatchController.updateFromKey] season:', season, 'currentWeek:', currentWeek);
 
         // Fetch updated matches for the week
-        if (season && currentWeek) {
+        if (season !== null && currentWeek !== null && currentWeek !== undefined) {
           const updatedMatches = await this.matchService.getBySeasonWeek(parseInt(season), currentWeek);
           const matchesIds = updatedMatches.map((match) => match.id);
           const startedMatchesBets = await this.betService.getStartedMatchesBetsByMatchIds(matchesIds);
