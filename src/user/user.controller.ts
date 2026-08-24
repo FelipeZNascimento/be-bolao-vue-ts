@@ -8,8 +8,10 @@ import { isRejected } from '#utils/apiResponse.js';
 import { AppError } from '#utils/appError.js';
 import { cachedInfo } from '#utils/dataCache.js';
 import { ErrorCode } from '#utils/errorCodes.js';
+import { validateRequestBody, validateRequestParams } from '#utils/requestValidation.utils.js';
 import bcrypt from 'bcrypt';
 import { NextFunction, Request, Response } from 'express';
+import { z } from 'zod';
 
 // Extend express-session types to include 'user' property
 declare module 'express-session' {
@@ -17,6 +19,49 @@ declare module 'express-session' {
     user: IUser | null;
   }
 }
+
+const forgotPasswordSchema = z.object({
+  email: z.string()
+});
+
+const getByIdParamsSchema = z.object({
+  userId: z.string().optional()
+});
+
+const registerSchema = z.object({
+  color: z.string().optional(),
+  email: z.string(),
+  fullName: z.string(),
+  icon: z.string().optional(),
+  name: z.string(),
+  password: z.string()
+});
+
+const updateFavoritesSchema = z.object({
+  favorites: z.array(z.string())
+});
+
+const updatePasswordSchema = z.object({
+  currentPassword: z.string(),
+  newPassword: z.string()
+});
+
+const updatePasswordFromTokenSchema = z.object({
+  email: z.string(),
+  password: z.string(),
+  token: z.string()
+});
+
+const updatePreferencesSchema = z.object({
+  color: z.string(),
+  icon: z.string()
+});
+
+const updateProfileSchema = z.object({
+  email: z.string(),
+  name: z.string(),
+  username: z.string()
+});
 
 export class UserController extends BaseController {
   constructor(
@@ -28,12 +73,7 @@ export class UserController extends BaseController {
 
   forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      const reqBody = req.body as { email: string };
-      const { email } = reqBody;
-
-      if (!email) {
-        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
-      }
+      const { email } = validateRequestBody(forgotPasswordSchema, req.body);
 
       const resetToken = generateVerificationToken();
       cachedInfo.set(`PASSWORD_RESET_${email}`, resetToken, 60 * 60); // 60 minutes expiration
@@ -50,9 +90,19 @@ export class UserController extends BaseController {
         return null;
       }
 
-      const userResponse: IUser = await this.userService.getById(user.id);
+      const { fleaflickerLeagueId, fleaflickerTeamId, ...userResponse } = await this.userService.getById(user.id);
       const favorites = await this.userService.getFavorites(user.id);
-      return { ...userResponse, favorites };
+
+      const parsedUser = {
+        ...userResponse,
+        fleaflicker:
+          fleaflickerLeagueId && fleaflickerTeamId
+            ? { leagueId: fleaflickerLeagueId, teamId: fleaflickerTeamId }
+            : null,
+        favorites
+      };
+
+      return parsedUser;
     });
   };
 
@@ -165,10 +215,10 @@ export class UserController extends BaseController {
     });
   };
 
-  getById = async (req: Request<{ userId: string }>, res: Response, next: NextFunction): Promise<void> => {
+  getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       const season = process.env.SEASON;
-      const userId = req.params.userId;
+      const { userId } = validateRequestParams(getByIdParamsSchema, req.params);
       if (!season) {
         throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
@@ -202,15 +252,22 @@ export class UserController extends BaseController {
         throw new AppError('Credenciais inválidas', 401, ErrorCode.UNAUTHORIZED);
       }
 
-      const { password: hashedPassword, ...user } = response[0];
+      const { password: hashedPassword, fleaflickerLeagueId, fleaflickerTeamId, ...user } = response[0];
       const isPasswordValid = await bcrypt.compare(password, hashedPassword);
       if (!isPasswordValid) {
         throw new AppError('Credenciais inválidas', 401, ErrorCode.UNAUTHORIZED);
       }
 
-      req.session.user = user;
       const favorites = await this.userService.getFavorites(user.id);
-      return { ...user, favorites };
+      const parsedUser = {
+        ...user,
+        favorites,
+        fleaflicker:
+          fleaflickerLeagueId && fleaflickerTeamId ? { leagueId: fleaflickerLeagueId, teamId: fleaflickerTeamId } : null
+      };
+
+      req.session.user = parsedUser;
+      return parsedUser;
     });
   };
 
@@ -239,19 +296,7 @@ export class UserController extends BaseController {
         throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
-      const reqBody = req.body as {
-        color: string;
-        email: string;
-        fullName: string;
-        icon: string;
-        name: string;
-        password: string;
-      };
-      const { color, email, fullName, icon, name, password } = reqBody;
-
-      if (!email || !password || !name || !fullName) {
-        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
-      }
+      const { color, email, fullName, icon, name, password } = validateRequestBody(registerSchema, req.body);
 
       const isValid = await checkExistingEntries(this.userService, email, name);
       if (!isValid) {
@@ -266,7 +311,7 @@ export class UserController extends BaseController {
       const { insertId } = registerResponse;
       const [setOnCurrentSeasonResponse, setIconsResponse] = await Promise.allSettled([
         this.userService.setOnCurrentSeason(parseInt(season), insertId),
-        this.userService.setIcons(insertId, icon, color)
+        this.userService.setIcons(insertId, icon ?? '', color ?? '')
       ]);
 
       if (isRejected(setOnCurrentSeasonResponse) || isRejected(setIconsResponse)) {
@@ -276,10 +321,15 @@ export class UserController extends BaseController {
       const loginResponse = await this.userService.login(email);
 
       if (loginResponse.length > 0) {
-        const { password: _hashedPassword, ...user } = loginResponse[0];
-        req.session.user = user;
+        const { password: _hashedPassword, fleaflickerLeagueId, fleaflickerTeamId, ...user } = loginResponse[0];
+        const userWithFleaflicker = {
+          ...user,
+          fleaflicker: { leagueId: fleaflickerLeagueId, teamId: fleaflickerTeamId }
+        };
+
+        req.session.user = userWithFleaflicker;
         const favorites = await this.userService.getFavorites(user.id);
-        return { ...user, favorites };
+        return { ...userWithFleaflicker, favorites };
       }
 
       return;
@@ -293,12 +343,7 @@ export class UserController extends BaseController {
       }
 
       const user = req.session.user;
-      const reqBody = req.body as { favorites: string[] };
-      const { favorites } = reqBody;
-
-      if (!Array.isArray(favorites)) {
-        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
-      }
+      const { favorites } = validateRequestBody(updateFavoritesSchema, req.body);
 
       await this.userService.updateFavorites(user.id, favorites);
       return await this.userService.getFavorites(user.id);
@@ -312,12 +357,7 @@ export class UserController extends BaseController {
       }
 
       const user = req.session.user;
-      const reqBody = req.body as { currentPassword: string; newPassword: string };
-      const { currentPassword, newPassword } = reqBody;
-
-      if (!currentPassword || !newPassword) {
-        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
-      }
+      const { currentPassword, newPassword } = validateRequestBody(updatePasswordSchema, req.body);
 
       const updatePasswordResponse = await this.userService.updatePassword(currentPassword, newPassword, user.id);
       if (!updatePasswordResponse || updatePasswordResponse.affectedRows === 0) {
@@ -330,12 +370,7 @@ export class UserController extends BaseController {
 
   updatePasswordFromToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      const reqBody = req.body as { email: string; password: string; token: string };
-      const { email, password, token } = reqBody;
-
-      if (!email || !token || !password) {
-        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
-      }
+      const { email, password, token } = validateRequestBody(updatePasswordFromTokenSchema, req.body);
 
       const cachedToken = cachedInfo.get(`PASSWORD_RESET_${email}`);
       if (cachedToken !== token) {
@@ -357,8 +392,7 @@ export class UserController extends BaseController {
 
       const user = req.session.user;
 
-      const reqBody = req.body as { color: string; icon: string };
-      const { color, icon } = reqBody;
+      const { color, icon } = validateRequestBody(updatePreferencesSchema, req.body);
       await this.userService.setIcons(user.id, color, icon);
       return await this.userService.getById(user.id);
     });
@@ -372,12 +406,7 @@ export class UserController extends BaseController {
 
       const user = req.session.user;
 
-      const reqBody = req.body as { email: string; name: string; username: string };
-      const { email, name, username } = reqBody;
-
-      if (!email || !name || !username) {
-        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
-      }
+      const { email, name, username } = validateRequestBody(updateProfileSchema, req.body);
 
       if (!validateEmail(email)) {
         throw new AppError('Email inválido', 409, ErrorCode.VALIDATION_ERROR);

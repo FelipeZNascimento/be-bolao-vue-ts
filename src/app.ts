@@ -1,6 +1,7 @@
 import betRoutes from '#bet/bet.routes.js';
 import config from '#database/config.js';
 import { connection } from '#database/db.js';
+import fleaflickerRoutes from '#fleaflicker/fleaflicker.routes.js';
 import matchRoutes from '#match/match.routes.js';
 import { errorHandler } from '#middlewares/errorHandler.js';
 import { cache, middleware, updateLastOnline } from '#middlewares/middlewares.js';
@@ -82,6 +83,7 @@ app.use('/bolaonflv2/ranking', rankingRoutes);
 app.use('/bolaonflv2/user', userRoutes);
 app.use('/bolaonflv2/match', matchRoutes);
 app.use('/bolaonflv2/team', cache(), teamRoutes);
+app.use('/bolaonflv2/fleaflicker', fleaflickerRoutes);
 
 app.get('/', [middleware]);
 
