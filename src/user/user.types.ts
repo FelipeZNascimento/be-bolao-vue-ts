@@ -58,6 +58,10 @@ export interface IUser {
   email: string;
   extraBetsCount?: number;
   favorites?: string[];
+  fleaflicker?: {
+    leagueId: null | number;
+    teamId: null | number;
+  } | null;
   fullName: string;
   icon: string;
   id: number;

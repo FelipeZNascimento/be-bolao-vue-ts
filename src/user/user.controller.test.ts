@@ -262,14 +262,16 @@ describe('UserController', () => {
   });
 
   it('login: should set session user', async () => {
-    mockUserService.login.mockResolvedValue([{ ...mockUser, password: 'hashed' }]);
+    mockUserService.login.mockResolvedValue([
+      { ...mockUser, fleaflickerLeagueId: null, fleaflickerTeamId: null, password: 'hashed' }
+    ]);
     mockBcrypt.compare.mockResolvedValue(true);
     mockUserService.getFavorites.mockResolvedValue([]);
     const { next, req, res } = getMockReqResSession();
     req.body = { email: 'a', password: 'b' };
 
     await controller.login(req, res, next);
-    expect(req.session.user).toEqual(mockUser);
+    expect(req.session.user).toEqual({ ...mockUser, favorites: [], fleaflicker: null });
   });
 
   it('logout: should clear session user and regenerate session', async () => {

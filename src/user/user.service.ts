@@ -41,16 +41,18 @@ export class UserService {
     const [row] = (await db.query(
       `SELECT users.id, users.login as email, users.name, users.full_name as fullName,
         users_icon.icon, users_icon.color, unix_timestamp(users_online.timestamp) as timestamp, users.admin,
-        users_season.id_season as seasonId, users_season.active, users_season.active
+        users_season.id_season as seasonId, users_season.active, users_season.active,
+        fleaflicker.league_id as fleaflickerLeagueId, fleaflicker.team_id as fleaflickerTeamId
         FROM users
         INNER JOIN users_season ON users.id = users_season.id_user
         LEFT JOIN users_icon ON users.id = users_icon.id_user
         LEFT JOIN users_online ON users.id = users_online.id_user
+        LEFT JOIN fleaflicker ON users.id = fleaflicker.user_id
         WHERE users.id = ?
         ORDER BY seasonId DESC
         LIMIT 1`,
       [userId]
-    )) as IUser[];
+    )) as (IUser & { fleaflickerLeagueId: null | number; fleaflickerTeamId: null | number })[];
 
     return row;
   }
@@ -370,15 +372,17 @@ export class UserService {
     const rows = (await db.query(
       `SELECT users.id, users.login as email, users.name, users.full_name as fullName,
         users_icon.icon, users_icon.color, users.password, users.admin,
-        users_season.id_season as seasonId, users_season.active
+        users_season.id_season as seasonId, users_season.active,
+        fleaflicker.league_id as fleaflickerLeagueId, fleaflicker.team_id as fleaflickerTeamId
         FROM users
         JOIN users_season ON users.id = users_season.id_user
         JOIN users_icon ON users.id = users_icon.id_user
+        LEFT JOIN fleaflicker ON users.id = fleaflicker.user_id
         WHERE users.login = ?
         ORDER BY users_season.id_season DESC
         LIMIT 1`,
       [email]
-    )) as (IUser & { password: string })[];
+    )) as (IUser & { fleaflickerLeagueId: null | number; fleaflickerTeamId: null | number; password: string })[];
 
     return rows;
   }

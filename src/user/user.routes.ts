@@ -8,7 +8,7 @@ const userService = new UserService();
 const mailerService = new MailerService();
 const userController = new UserController(userService, mailerService);
 
-// Post routes
+// Login/Register routes
 router.post('/login', userController.login);
 router.post('/register', userController.register);
 router.post('/profile', userController.updateProfile);
@@ -16,13 +16,13 @@ router.post('/preferences', userController.updatePreferences);
 router.post('/password', userController.updatePassword);
 router.post('/password-token', userController.updatePasswordFromToken);
 router.post('/forgot-password', userController.forgotPassword);
-router.post('/favorites', userController.updateFavorites);
-
-// Get routes
 router.get('/logout', userController.logout);
 router.get('/activeProfile', userController.getActiveProfile);
 router.get('/season-register', userController.registerToCurrentSeason);
+
+// Favorites routes
 router.get('/favorites', userController.getFavorites);
+router.post('/favorites', userController.updateFavorites);
 
 // Admin routes
 router.get('/admin/', userController.getAdmin);

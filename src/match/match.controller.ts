@@ -15,8 +15,30 @@ import { isFulfilled, isRejected } from '#utils/apiResponse.js';
 import { AppError } from '#utils/appError.js';
 import { CACHE_KEYS, cachedInfo } from '#utils/dataCache.js';
 import { ErrorCode } from '#utils/errorCodes.js';
+import { validateRequestBody, validateRequestParams } from '#utils/requestValidation.utils.js';
 import { WebSocketService } from '#websocket/websocket.service.js';
 import { NextFunction, Request, Response } from 'express';
+import { z } from 'zod';
+
+const getBySeasonWeekParamsSchema = z.object({
+  season: z.string().optional(),
+  week: z.string().optional()
+});
+
+const updateFromKeySchema = z.object({
+  awayPoints: z.number().nullable(),
+  awayTeamCode: z.string(),
+  awayWinLosses: z.string().optional(),
+  clock: z.string().nullable(),
+  homePoints: z.number().nullable(),
+  homeTeamCode: z.string(),
+  homeTeamOdds: z.string().nullable(),
+  homeWinLosses: z.string().optional(),
+  overUnder: z.string().nullable(),
+  possession: z.enum(['away', 'home']).nullable(),
+  status: z.number(),
+  week: z.number().nullable()
+});
 
 export class MatchController extends BaseController {
   constructor(
@@ -29,16 +51,14 @@ export class MatchController extends BaseController {
     super();
   }
 
-  getBySeasonWeek = async (
-    req: Request<{ season: string; week: string }>,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> => {
+  getBySeasonWeek = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       let user = req.session.user;
 
-      const season = req.params.season || process.env.SEASON;
-      let week: number | undefined = parseInt(req.params.week) || cachedInfo.get(CACHE_KEYS.CURRENT_WEEK);
+      const { season: paramsSeason, week: paramsWeek } = validateRequestParams(getBySeasonWeekParamsSchema, req.params);
+
+      const season = paramsSeason || process.env.SEASON;
+      let week: number | undefined = parseInt(paramsWeek ?? '') || cachedInfo.get(CACHE_KEYS.CURRENT_WEEK);
 
       if (week === undefined || isNaN(week)) {
         const currentWeek = await this.matchService.getCurrentWeek();
@@ -109,21 +129,6 @@ export class MatchController extends BaseController {
         throw new AppError('Chave inválida', 401, ErrorCode.UNAUTHORIZED);
       }
 
-      const reqBody = req.body as {
-        awayPoints: null | number;
-        awayTeamCode: string;
-        awayWinLosses?: string;
-        clock: null | string;
-        homePoints: null | number;
-        homeTeamCode: string;
-        homeTeamOdds: null | string;
-        homeWinLosses?: string;
-        overUnder: null | string;
-        possession: 'away' | 'home' | null;
-        status: MatchStatus;
-        week: null | number;
-      };
-
       const {
         awayPoints,
         awayTeamCode,
@@ -135,9 +140,10 @@ export class MatchController extends BaseController {
         homeWinLosses,
         overUnder,
         possession,
-        status,
+        status: rawStatus,
         week
-      } = reqBody;
+      } = validateRequestBody(updateFromKeySchema, req.body);
+      const status = rawStatus as MatchStatus;
 
       if (homeWinLosses) {
         const homeTeamIndex = teams.findIndex((team) => team.code === homeTeamCode);

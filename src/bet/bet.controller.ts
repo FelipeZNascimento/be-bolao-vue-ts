@@ -9,7 +9,20 @@ import { TeamService } from '#team/team.service.js';
 import { getFromCacheOrFetch } from '#team/team.util.js';
 import { AppError } from '#utils/appError.js';
 import { ErrorCode } from '#utils/errorCodes.js';
+import { validateRequestBody, validateRequestParams } from '#utils/requestValidation.utils.js';
 import { NextFunction, Request, Response } from 'express';
+import { z } from 'zod';
+
+const getBySeasonParamsSchema = z.object({
+  season: z.string().optional()
+});
+
+const updateBetSchema = z.object({
+  betValue: z.number(),
+  matchId: z.number()
+});
+
+const updateExtraSchema = z.record(z.string(), z.union([z.null(), z.number(), z.array(z.number())]));
 
 export class BetController extends BaseController {
   constructor(
@@ -20,9 +33,10 @@ export class BetController extends BaseController {
     super();
   }
 
-  getExtras = async (req: Request<{ season: string }>, res: Response, next: NextFunction): Promise<void> => {
+  getExtras = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      const season = req.params.season || process.env.SEASON;
+      const { season: paramsSeason } = validateRequestParams(getBySeasonParamsSchema, req.params);
+      const season = paramsSeason || process.env.SEASON;
       const seasonStart = process.env.SEASON_START;
       if (!seasonStart) {
         throw new AppError('Erro de inicialização', 404, ErrorCode.INTERNAL_SERVER_ERROR);
@@ -63,9 +77,10 @@ export class BetController extends BaseController {
     });
   };
 
-  getExtrasResults = async (req: Request<{ season: string }>, res: Response, next: NextFunction): Promise<void> => {
+  getExtrasResults = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      const season = req.params.season || process.env.SEASON;
+      const { season: paramsSeason } = validateRequestParams(getBySeasonParamsSchema, req.params);
+      const season = paramsSeason || process.env.SEASON;
       const seasonStart = process.env.SEASON_START;
 
       if (!seasonStart) {
@@ -100,8 +115,7 @@ export class BetController extends BaseController {
 
       const user = req.session.user;
 
-      const reqBody = req.body as { betValue: number; matchId: number };
-      const { betValue, matchId } = reqBody;
+      const { betValue, matchId } = validateRequestBody(updateBetSchema, req.body);
 
       const matchResponse = await this.matchService.getTimestampByMatchId(matchId);
       const nowTimestamp = Math.floor(new Date().getTime() / 1000);
@@ -127,8 +141,7 @@ export class BetController extends BaseController {
       const seasonStart = process.env.SEASON_START;
       const season = process.env.SEASON;
 
-      const reqBody = req.body as Record<string, null | number | number[]>;
-      const newExtraBets = reqBody;
+      const newExtraBets = validateRequestBody(updateExtraSchema, req.body);
 
       if (!seasonStart || !season) {
         throw new AppError('Erro de inicialização', 404, ErrorCode.INTERNAL_SERVER_ERROR);

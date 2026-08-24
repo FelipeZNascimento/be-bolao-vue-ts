@@ -20,7 +20,13 @@ import { isFulfilled, isRejected } from '#utils/apiResponse.js';
 import { AppError } from '#utils/appError.js';
 import { CACHE_KEYS, cachedInfo } from '#utils/dataCache.js';
 import { ErrorCode } from '#utils/errorCodes.js';
+import { validateRequestParams } from '#utils/requestValidation.utils.js';
 import { NextFunction, Request, Response } from 'express';
+import { z } from 'zod';
+
+const getRankingParamsSchema = z.object({
+  season: z.string().optional()
+});
 
 export class RankingController extends BaseController {
   constructor(
@@ -179,9 +185,10 @@ export class RankingController extends BaseController {
     return { extras, extrasResults, matches, startedMatches, users };
   };
 
-  getRanking = async (req: Request<{ season: string }>, res: Response, next: NextFunction): Promise<void> => {
+  getRanking = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      const season = req.params.season || process.env.SEASON;
+      const { season: paramsSeason } = validateRequestParams(getRankingParamsSchema, req.params);
+      const season = paramsSeason || process.env.SEASON;
       const seasonStart = process.env.SEASON_START;
 
       if (!season || !seasonStart) {

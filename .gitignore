@@ -17,4 +17,4 @@
 
 # Logs & Debug
 /apiCalls
-http/*.*
+http/*
