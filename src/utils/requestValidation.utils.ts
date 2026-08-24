@@ -73,3 +73,14 @@ export const validateRequestBody = <T extends z.ZodType>(schema: T, body: unknow
  */
 export const validateRequestParams = <T extends z.ZodType>(schema: T, params: unknown): z.infer<T> =>
   parseOrThrow(schema, params);
+
+/**
+ * validateRequestQuery - Same as validateRequestBody but for `req.query`.
+ *
+ * @schema: Zod schema describing the expected query string shape.
+ * @query: The raw, unvalidated query string (e.g. `req.query`).
+ *
+ * @return: The parsed, type-safe query on success.
+ */
+export const validateRequestQuery = <T extends z.ZodType>(schema: T, query: unknown): z.infer<T> =>
+  parseOrThrow(schema, query);

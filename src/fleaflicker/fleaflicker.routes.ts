@@ -8,7 +8,7 @@ const fleaflickerController = new FleaflickerController(fleaflickerService);
 
 router.get('/roster/:leagueId/:teamId', fleaflickerController.getRoster);
 router.get('/standings/:leagueId', fleaflickerController.getStandings);
-router.get('/boxscore/:leagueId{/:scoringPeriod}', fleaflickerController.getBoxscore);
+router.get('/boxscore/:leagueId', fleaflickerController.getBoxscore);
 router.post('/info', fleaflickerController.setFleaflickerInfo);
 router.delete('/info', fleaflickerController.deleteFleaflickerInfo);
 

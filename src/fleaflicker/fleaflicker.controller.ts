@@ -2,7 +2,7 @@ import { FleaflickerService } from '#fleaflicker/fleaflicker.service.js';
 import { BaseController } from '#shared/base.controller.js';
 import { AppError } from '#utils/appError.js';
 import { ErrorCode } from '#utils/errorCodes.js';
-import { validateRequestBody, validateRequestParams } from '#utils/requestValidation.utils.js';
+import { validateRequestBody, validateRequestParams, validateRequestQuery } from '#utils/requestValidation.utils.js';
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 
@@ -21,7 +21,10 @@ const getStandingsParamsSchema = z.object({
 });
 
 const getBoxscoreParamsSchema = z.object({
-  leagueId: z.string(),
+  leagueId: z.string()
+});
+
+const getBoxscoreQuerySchema = z.object({
   scoringPeriod: z.string().optional()
 });
 
@@ -39,7 +42,8 @@ export class FleaflickerController extends BaseController {
 
   getBoxscore = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      const { leagueId, scoringPeriod } = validateRequestParams(getBoxscoreParamsSchema, req.params);
+      const { leagueId } = validateRequestParams(getBoxscoreParamsSchema, req.params);
+      const { scoringPeriod } = validateRequestQuery(getBoxscoreQuerySchema, req.query);
       return await this.fleaflickerService.getBoxscore(leagueId, scoringPeriod);
     });
   };
