@@ -24,8 +24,8 @@ importers:
         specifier: ^1.18.2
         version: 1.19.0(supports-color@7.2.0)
       mysql2:
-        specifier: ^3.16.0
-        version: 3.23.3(@types/node@26.2.0)
+        specifier: ^3.23.4
+        version: 3.23.4(@types/node@26.2.0)
       node-cache:
         specifier: ^5.1.2
         version: 5.1.2
@@ -1576,8 +1576,8 @@ packages:
     resolution: {integrity: sha512-KCXPEvAkO0RcHPr362O5N8tFY2fXvbjfkPvRY/wGumh4EOemo9Hm5FjQZqv/pCmrnuxGu5OxnSENG0gTXqKMgQ==}
     engines: {node: '>= 8.0'}
 
-  mysql2@3.23.3:
-    resolution: {integrity: sha512-ehp9HEKr4wVJaBOUVxNFa+CNrsCCCZ6363/jbGhb7WpEmSRNIXjHBjFs5K2s2cXn7j/RhDieejsQJ6nfUwD6vQ==}
+  mysql2@3.23.4:
+    resolution: {integrity: sha512-J1Rgl8Oy5iw3mOBjKeTMQ3cJNjMYtJYavQVXShsMtSj9rKV8Q1+QaGKNJqDVQFcNINqYYp6Vxd90r69cCoBxBA==}
     engines: {node: '>= 8.0'}
     peerDependencies:
       '@types/node': '>= 8'
@@ -3514,7 +3514,7 @@ snapshots:
       seq-queue: 0.0.5
       sqlstring: 2.3.3
 
-  mysql2@3.23.3(@types/node@26.2.0):
+  mysql2@3.23.4(@types/node@26.2.0):
     dependencies:
       '@types/node': 26.2.0
       aws-ssl-profiles: 1.1.2
