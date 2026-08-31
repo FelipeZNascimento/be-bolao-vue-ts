@@ -1,5 +1,5 @@
 import type { IBet } from '#bet/bet.types.js';
-import type { IMatch } from '#match/match.types.js';
+import type { IMatch, IMatchSummary } from '#match/match.types.js';
 import type { ITeam } from '#team/team.types.js';
 
 import { BetService } from '#bet/bet.service.js';
@@ -19,6 +19,13 @@ import { validateRequestBody, validateRequestParams } from '#utils/requestValida
 import { WebSocketService } from '#websocket/websocket.service.js';
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
+
+const getMoreDetailsBodySchema = z.object({
+  status: z.number()
+});
+const getMoreDetailsParamsSchema = z.object({
+  espnId: z.string()
+});
 
 const getBySeasonWeekParamsSchema = z.object({
   season: z.string().optional(),
@@ -51,6 +58,52 @@ export class MatchController extends BaseController {
     super();
   }
 
+  getMoreDetails = async (req: Request<{ espnId: string }>, res: Response, next: NextFunction): Promise<void> => {
+    await this.handleRequest(req, res, next, async () => {
+      const { espnId } = validateRequestParams(getMoreDetailsParamsSchema, req.params);
+      const { status } = validateRequestBody(getMoreDetailsBodySchema, req.body);
+
+      const isFinished = status === MATCH_STATUS.FINAL || status === MATCH_STATUS.FINAL_OVERTIME;
+      const cached = this.getMatchDetailsFromCache(espnId);
+
+      if (cached) {
+        const cacheAge = Date.now() - cached.timestamp;
+        const cacheIsFresh = cacheAge < 60 * 1000;
+
+        // Finished match, and cache also says finished: cache is definitive, return it
+        if (isFinished && cached.isFinished) {
+          return cached.matchDetails;
+        }
+
+        // Not finished, and cache is still fresh: return it
+        if (!isFinished && cacheIsFresh) {
+          return cached.matchDetails;
+        }
+
+        // Otherwise (finished but cache says not finished, or not finished and cache is stale): refetch
+      }
+
+      return await this.refreshMatchDetailsCache(espnId, isFinished);
+    });
+  };
+
+  private getMatchDetailsCacheKey(espnId: number | string): string {
+    return `${CACHE_KEYS.MATCH_DETAILS}:${espnId}`;
+  }
+
+  private getMatchDetailsFromCache(espnId: number | string) {
+    return cachedInfo.get<{ isFinished: boolean; matchDetails: IMatchSummary; timestamp: number }>(
+      this.getMatchDetailsCacheKey(espnId)
+    );
+  }
+
+  private async refreshMatchDetailsCache(espnId: number | string, isFinished: boolean): Promise<IMatchSummary> {
+    const matchDetails = await this.matchService.getMoreDetails(parseInt(espnId.toString()));
+    cachedInfo.set(this.getMatchDetailsCacheKey(espnId), { isFinished, matchDetails, timestamp: Date.now() });
+
+    return matchDetails;
+  }
+
   getBySeasonWeek = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       let user = req.session.user;
@@ -58,7 +111,7 @@ export class MatchController extends BaseController {
       const { season: paramsSeason, week: paramsWeek } = validateRequestParams(getBySeasonWeekParamsSchema, req.params);
 
       const season = paramsSeason || process.env.SEASON;
-      let week: number | undefined = parseInt(paramsWeek ?? '') || cachedInfo.get(CACHE_KEYS.CURRENT_WEEK);
+      let week: number | undefined = parseInt(paramsWeek ?? '');
 
       if (week === undefined || isNaN(week)) {
         const currentWeek = await this.matchService.getCurrentWeek();
@@ -147,26 +200,36 @@ export class MatchController extends BaseController {
 
       if (homeWinLosses) {
         const homeTeamIndex = teams.findIndex((team) => team.code === homeTeamCode);
-        teams[homeTeamIndex].winLosses = homeTeamIndex !== -1 ? homeWinLosses : null;
+        if (homeTeamIndex !== -1) {
+          teams[homeTeamIndex].winLosses = homeWinLosses;
+        }
       }
 
       if (awayWinLosses) {
         const awayTeamIndex = teams.findIndex((team) => team.code === awayTeamCode);
-        teams[awayTeamIndex].winLosses = awayTeamIndex !== -1 ? awayWinLosses : null;
+        if (awayTeamIndex !== -1) {
+          teams[awayTeamIndex].winLosses = awayWinLosses;
+        }
       }
 
       if (awayWinLosses || homeWinLosses) {
         setTeamsCache(teams);
       }
 
-      if (
-        status === MATCH_STATUS.NOT_STARTED &&
-        awayTeamCode &&
-        homeTeamCode &&
-        homeTeamOdds !== null &&
-        overUnder !== null &&
-        week !== null
-      ) {
+      const matchInfo =
+        awayTeamCode && homeTeamCode && week !== null
+          ? await this.matchService.getIdByMatchInfo(awayTeamCode, homeTeamCode, week, parseInt(season))
+          : undefined;
+
+      if (!awayTeamCode || !homeTeamCode || week === null) {
+        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
+      }
+
+      if (status === MATCH_STATUS.NOT_STARTED) {
+        if (homeTeamOdds === null || overUnder === null) {
+          throw new AppError('Campo obrigatório ausente ao atualizar odds', 400, ErrorCode.MISSING_REQUIRED_FIELD);
+        }
+
         // If match has not started, we can only update odds info
         updateResponse = await this.matchService.updateOddsByMatchInfo(
           overUnder,
@@ -177,15 +240,11 @@ export class MatchController extends BaseController {
           status,
           parseInt(season)
         );
-      } else if (
-        status !== MATCH_STATUS.NOT_STARTED &&
-        awayTeamCode &&
-        homeTeamCode &&
-        awayPoints !== null &&
-        homePoints !== null &&
-        status &&
-        week !== null
-      ) {
+      } else {
+        if (awayPoints === null || homePoints === null) {
+          throw new AppError('Campo obrigatório ausente ao atualizar placar', 400, ErrorCode.MISSING_REQUIRED_FIELD);
+        }
+
         // If match has started, we can update all info
         updateResponse = await this.matchService.updateByMatchInfo(
           awayPoints,
@@ -198,14 +257,18 @@ export class MatchController extends BaseController {
           week,
           parseInt(season)
         );
-      } else {
-        throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
+      console.info('[MatchController.updateFromKey] matchInfo:', matchInfo);
       console.info('[MatchController.updateFromKey] affectedRows:', updateResponse.affectedRows);
 
       // If any match was updated, we need to update ranking and send websocket message
       if (updateResponse.affectedRows > 0) {
+        if (matchInfo?.espnId) {
+          const isFinished = status === MATCH_STATUS.FINAL || status === MATCH_STATUS.FINAL_OVERTIME;
+          await this.refreshMatchDetailsCache(matchInfo.espnId, isFinished);
+        }
+
         const rankingController = new RankingController(
           this.userService,
           this.matchService,
@@ -219,7 +282,12 @@ export class MatchController extends BaseController {
           parseInt(seasonStart)
         );
 
-        const currentWeek = cachedInfo.get<number>(CACHE_KEYS.CURRENT_WEEK);
+        let currentWeek = cachedInfo.get<number>(CACHE_KEYS.CURRENT_WEEK);
+        if (!currentWeek) {
+          currentWeek = await this.matchService.getCurrentWeek();
+          cachedInfo.set(CACHE_KEYS.CURRENT_WEEK, currentWeek, 60 * 60 * 4); // Cache for 4 hours
+        }
+
         console.info('[MatchController.updateFromKey] season:', season, 'currentWeek:', currentWeek);
 
         // Fetch updated matches for the week
@@ -241,7 +309,7 @@ export class MatchController extends BaseController {
           console.warn('[MatchController.updateFromKey] skipping broadcast: missing season or currentWeek');
         }
       }
-      return updateResponse;
+      return { ...updateResponse, matchId: matchInfo?.id, matchEspnId: matchInfo?.espnId };
     });
   };
 }

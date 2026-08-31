@@ -1,4 +1,4 @@
-import type { IMatch, IWeek } from '#match/match.types.js';
+import type { IEspnSummaryResponse, IMatch, IMatchSummary, IMatchTeamSummary, IWeek } from '#match/match.types.js';
 import type { ICount } from '#shared/shared.types.js';
 
 import db from '#database/db.js';
@@ -6,6 +6,46 @@ import { MatchStatus } from '#match/match.constants.js';
 import { ResultSetHeader } from 'mysql2/promise';
 
 export class MatchService {
+  async getMoreDetails(espnId: number): Promise<IMatchSummary> {
+    const response = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${espnId}`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ESPN summary for event ${espnId}: ${response.status}`);
+    }
+
+    const data = (await response.json()) as IEspnSummaryResponse;
+
+    const buildTeamSummary = (homeAway: 'away' | 'home'): IMatchTeamSummary => {
+      const statisticsEntry = data.boxscore?.teams.find((entry) => entry.homeAway === homeAway);
+      const teamId = statisticsEntry?.team.id;
+
+      const playersEntry = data.boxscore?.players?.find((entry) => entry.team.id === teamId);
+      const injuriesEntry = data.injuries?.find((entry) => entry.team.id === teamId);
+      const leadersEntry = data.leaders?.find((entry) => entry.team.id === teamId);
+
+      return {
+        injuries: injuriesEntry?.injuries ?? [],
+        leaders: leadersEntry?.leaders ?? [],
+        players: playersEntry?.statistics ?? [],
+        statistics: statisticsEntry?.statistics ?? []
+      };
+    };
+
+    const linescores = data.header?.competitions[0]?.competitors ?? [];
+
+    return {
+      article: data.article ? [data.article] : [],
+      away: buildTeamSummary('away'),
+      drives: data.drives?.previous ?? [],
+      gameInfo: {
+        ...(data.gameInfo ?? { venue: { fullName: '', id: '' } }),
+        linescores
+      },
+      home: buildTeamSummary('home'),
+      scoringPlays: data.scoringPlays ?? []
+    };
+  }
+
   async getBySeason(season: number) {
     return (await db.query(
       `SELECT SQL_NO_CACHE matches.id, matches.timestamp, matches.week, matches.id_season as season, matches.status, matches.possession,
@@ -20,7 +60,7 @@ export class MatchService {
 
   async getBySeasonWeek(season: number, week: number) {
     return (await db.query(
-      `SELECT SQL_NO_CACHE matches.id, matches.timestamp, matches.week, matches.id_season as season, matches.status, matches.possession,
+      `SELECT SQL_NO_CACHE matches.id, matches.espn_id as espnId, matches.timestamp, matches.week, matches.id_season as season, matches.status, matches.possession,
         matches.away_points as awayScore, matches.home_points as homeScore, matches.clock, matches.overUnder, matches.homeTeamOdds,
         teamHome.name AS teamHome, teamHome.alias AS teamHomeAlias, teamHome.id AS idTeamHome,
         teamHome.code AS teamHomeCode, teamHome.background AS teamHomeBackground, teamHome.foreground AS teamHomeForeground,
@@ -47,6 +87,28 @@ export class MatchService {
     )) as IWeek[];
 
     return row.week;
+  }
+
+  async getIdByMatchInfo(awayTeamCode: string, homeTeamCode: string, week: number, season: number) {
+    const [row] = (await db.query(
+      `SELECT matches.id, matches.espn_id as espnId
+        FROM matches
+        WHERE id_away_team = (
+            SELECT id
+            FROM teams
+            WHERE code = ?
+        )
+        AND id_home_team = (
+            SELECT id
+            FROM teams
+            WHERE code = ?
+        )
+        AND week = ?
+        AND id_season = ?`,
+      [awayTeamCode, homeTeamCode, week, season]
+    )) as { id: number; espnId: number }[];
+
+    return row;
   }
 
   async getMatchesBySeason(season: number) {

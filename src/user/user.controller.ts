@@ -311,7 +311,7 @@ export class UserController extends BaseController {
       const { insertId } = registerResponse;
       const [setOnCurrentSeasonResponse, setIconsResponse] = await Promise.allSettled([
         this.userService.setOnCurrentSeason(parseInt(season), insertId),
-        this.userService.setIcons(insertId, icon ?? '', color ?? '')
+        this.userService.setIcons(insertId, color ?? '', icon ?? '')
       ]);
 
       if (isRejected(setOnCurrentSeasonResponse) || isRejected(setIconsResponse)) {
