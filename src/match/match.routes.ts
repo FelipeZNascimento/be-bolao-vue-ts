@@ -19,6 +19,7 @@ const matchController = new MatchController(matchService, userService, betServic
 router.get('/', matchController.getBySeasonWeek);
 router.get('/:season/:week', matchController.getBySeasonWeek);
 
+router.post('/more-info/:espnId', matchController.getMoreDetails);
 router.post('/update/:key', matchController.updateFromKey);
 
 export default router;

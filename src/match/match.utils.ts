@@ -35,6 +35,7 @@ export const parseQueryResponse = (match: IMatch, homeTeam: ITeam, awayTeam: ITe
     },
     homeTeamOdds: match.homeTeamOdds,
     id: match.id,
+    espnId: match.espnId,
     overUnder: match.overUnder,
     status: match.status,
     timestamp: match.timestamp

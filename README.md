@@ -116,6 +116,32 @@ Notes:
 - Requires the `season_ranking` table (columns: `id_season`, `id_user`, `points`, `bullseye`,
   `winner`, `total_bets`, `total_games`, `position`, `total_participants`, `extras`).
 
+## ESPN Match Id Sync
+
+Two scripts help reconcile local `matches` with ESPN's own event ids, stored in `matches.espn_id`.
+
+### 1. Fetch ESPN match ids for a week
+
+```bash
+npx tsx scripts/fetchEspnMatchIds.ts <week>
+# Example: npx tsx scripts/fetchEspnMatchIds.ts 1
+```
+
+Fetches ESPN's scoreboard for the given week and writes a CSV to
+`scripts/output/espn-match-ids-week-<week>.csv` with columns `espn_id,id_home_team,id_away_team,week`.
+Note `id_home_team`/`id_away_team` here are ESPN's own team ids, not local DB ids. No `.env`/DB access needed.
+
+### 2. Update `matches.espn_id` from the CSV
+
+```bash
+npx tsx --env-file .env scripts/updateMatchEspnIds.ts <csvPath>
+# Example: npx tsx --env-file .env scripts/updateMatchEspnIds.ts scripts/output/espn-match-ids-week-1.csv
+```
+
+Reads the CSV, resolves each ESPN team id to a local team via `teams.espn_id`, then updates
+`matches.espn_id` where `id_home_team`, `id_away_team`, `week`, and `id_season = 14` match.
+Rows that can't be resolved or that match zero DB rows are logged and skipped (not treated as errors).
+
 ## License
 
 MIT
