@@ -24,8 +24,8 @@ const forgotPasswordSchema = z.object({
   email: z.string()
 });
 
-const getByIdParamsSchema = z.object({
-  userId: z.string().optional()
+const userIdParamsSchema = z.object({
+  userId: z.string()
 });
 
 const registerSchema = z.object({
@@ -61,6 +61,10 @@ const updateProfileSchema = z.object({
   email: z.string(),
   name: z.string(),
   username: z.string()
+});
+
+const updateBalanceSchema = z.object({
+  balance: z.number().multipleOf(0.01)
 });
 
 export class UserController extends BaseController {
@@ -218,7 +222,7 @@ export class UserController extends BaseController {
   getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       const season = process.env.SEASON;
-      const { userId } = validateRequestParams(getByIdParamsSchema, req.params);
+      const { userId } = validateRequestParams(userIdParamsSchema, req.params);
       if (!season) {
         throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
@@ -395,6 +399,16 @@ export class UserController extends BaseController {
       const { color, icon } = validateRequestBody(updatePreferencesSchema, req.body);
       await this.userService.setIcons(user.id, color, icon);
       return await this.userService.getById(user.id);
+    });
+  };
+
+  updateBalance = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    await this.handleRequest(req, res, next, async () => {
+      const { balance } = validateRequestBody(updateBalanceSchema, req.body);
+      const { userId } = validateRequestParams(userIdParamsSchema, req.params);
+
+      await this.userService.updateBalance(parseInt(userId), balance);
+      return await this.userService.getById(parseInt(userId));
     });
   };
 

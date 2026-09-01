@@ -8,7 +8,7 @@ export class SeasonController extends BaseController {
     super();
   }
 
-  getCurrentSeasonAndWeek = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  getCurrentSeasonInfo = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       const season = process.env.SEASON;
       const seasonStart = process.env.SEASON_START;

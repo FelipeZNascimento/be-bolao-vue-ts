@@ -27,6 +27,7 @@ router.post('/favorites', userController.updateFavorites);
 // Admin routes
 router.get('/admin/', userController.getAdmin);
 router.get('/admin/toggle-active-status/:userId', userController.toggleActiveStatus);
+router.post('/admin/update-balance/:userId', userController.updateBalance);
 
 // Records
 router.get('/records/seasons', userController.getSeasonsRecords);

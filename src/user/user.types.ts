@@ -53,6 +53,7 @@ export interface ISeasonRankingRow {
 
 export interface IUser {
   admin: boolean;
+  balance: number;
   active: boolean;
   color: string;
   email: string;

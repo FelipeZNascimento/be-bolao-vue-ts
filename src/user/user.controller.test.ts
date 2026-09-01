@@ -65,6 +65,7 @@ vi.mock('#utils/apiResponse.js', () => ({
 
 const mockUser: IUser = {
   admin: false,
+  balance: 0,
   active: true,
   color: 'e',
   email: 'a',
@@ -164,15 +165,6 @@ describe('UserController', () => {
 
     await controller.getById(req, res, next);
     expect(next).toHaveBeenCalledWith(expect.any(AppError));
-  });
-
-  it('getById: should return users by season if userId is missing', async () => {
-    mockUserService.getBySeason.mockResolvedValue([{ id: 1 }]);
-    const { next, req, res } = getMockReqResSession<{ userId: string }>();
-    req.params = {} as unknown as { userId: string };
-
-    await controller.getById(req, res, next);
-    expect(mockUserService.getBySeason).toHaveBeenCalledWith(14);
   });
 
   it('getById: should return user by id', async () => {

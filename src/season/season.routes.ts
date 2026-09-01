@@ -8,6 +8,6 @@ const matchService = new MatchService();
 
 const seasonController = new SeasonController(matchService);
 
-router.get('/current/', seasonController.getCurrentSeasonAndWeek);
+router.get('/current/', seasonController.getCurrentSeasonInfo);
 
 export default router;

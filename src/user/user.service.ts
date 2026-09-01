@@ -42,12 +42,14 @@ export class UserService {
       `SELECT users.id, users.login as email, users.name, users.full_name as fullName,
         users_icon.icon, users_icon.color, unix_timestamp(users_online.timestamp) as timestamp, users.admin,
         users_season.id_season as seasonId, users_season.active, users_season.active,
-        fleaflicker.league_id as fleaflickerLeagueId, fleaflicker.team_id as fleaflickerTeamId
+        fleaflicker.league_id as fleaflickerLeagueId, fleaflicker.team_id as fleaflickerTeamId,
+        users_balance.balance
         FROM users
         INNER JOIN users_season ON users.id = users_season.id_user
         LEFT JOIN users_icon ON users.id = users_icon.id_user
         LEFT JOIN users_online ON users.id = users_online.id_user
         LEFT JOIN fleaflicker ON users.id = fleaflicker.user_id
+        LEFT JOIN users_balance ON users.id = users_balance.user_id
         WHERE users.id = ?
         ORDER BY seasonId DESC
         LIMIT 1`,
@@ -60,11 +62,12 @@ export class UserService {
   async getAdmin(season: number) {
     const rows = (await db.query(
       `SELECT SQL_NO_CACHE users.id, users.login as email, users.name, users.admin, users.full_name as fullName,
-        users_icon.icon, users_icon.color, unix_timestamp(users_online.timestamp) as timestamp,
+        users_icon.icon, users_icon.color, unix_timestamp(users_online.timestamp) as timestamp, users_balance.balance,
         users_season.id_season AS seasonId, users_season.active
         FROM users
         INNER JOIN users_season ON users.id = users_season.id_user
         AND users_season.id_season = ?
+        LEFT JOIN users_balance ON users.id = users_balance.user_id
         LEFT JOIN users_icon ON users.id = users_icon.id_user
         LEFT JOIN users_online ON users.id = users_online.id_user`,
       [season]
@@ -469,6 +472,17 @@ export class UserService {
         SET password = ?
         WHERE id = ?`,
       [hashedPassword, id]
+    )) as ResultSetHeader;
+
+    return rows;
+  }
+
+  async updateBalance(userId: number, newBalance: number) {
+    const rows = (await db.query(
+      `UPDATE users_balance
+        SET balance = ?
+        WHERE user_id = ?`,
+      [newBalance, userId]
     )) as ResultSetHeader;
 
     return rows;
