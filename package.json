@@ -35,9 +35,6 @@
     "*.{js,jsx,ts,tsx}": [
       "oxlint",
       "oxfmt --check"
-    ],
-    "*.{json,yml,yaml,md}": [
-      "oxfmt --check"
     ]
   },
   "keywords": [],
