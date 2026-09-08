@@ -1,4 +1,6 @@
 import { UserService } from '#user/user.service.js';
+import { AppError } from '#utils/appError.js';
+import { ErrorCode } from '#utils/errorCodes.js';
 import { RequestHandler } from 'express';
 import { NextFunction, Request, Response } from 'express';
 
@@ -8,6 +10,19 @@ interface CacheOptions {
 }
 
 const userService = new UserService();
+
+// Guards routes that must only ever be reached by an authenticated admin.
+// Without it, the /user/admin/* routes run with no authorization check at all.
+export const requireAdmin: RequestHandler = (req, _res, next) => {
+  const user = req.session.user;
+  if (!user) {
+    return next(new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED));
+  }
+  if (!user.admin) {
+    return next(new AppError('Não autorizado', 403, ErrorCode.FORBIDDEN));
+  }
+  next();
+};
 
 export const updateLastOnline: RequestHandler = (req, _res, next) => {
   if (req.session.user) {

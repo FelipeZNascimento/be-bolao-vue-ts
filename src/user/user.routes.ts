@@ -1,4 +1,5 @@
 import { MailerService } from '#mailer/mailer.service.js';
+import { requireAdmin } from '#middlewares/middlewares.js';
 import { UserController } from '#user/user.controller.js';
 import { UserService } from '#user/user.service.js';
 import express from 'express';
@@ -25,9 +26,9 @@ router.get('/favorites', userController.getFavorites);
 router.post('/favorites', userController.updateFavorites);
 
 // Admin routes
-router.get('/admin/', userController.getAdmin);
-router.get('/admin/toggle-active-status/:userId', userController.toggleActiveStatus);
-router.post('/admin/update-balance/:userId', userController.updateBalance);
+router.get('/admin/', requireAdmin, userController.getAdmin);
+router.get('/admin/toggle-active-status/:userId', requireAdmin, userController.toggleActiveStatus);
+router.post('/admin/update-balance/:userId', requireAdmin, userController.updateBalance);
 
 // Records
 router.get('/records/seasons', userController.getSeasonsRecords);
