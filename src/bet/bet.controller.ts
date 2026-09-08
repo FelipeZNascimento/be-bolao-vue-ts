@@ -111,6 +111,9 @@ export class BetController extends BaseController {
   update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       const user = getAuthenticatedUser(req);
+      if (!user.active) {
+        throw new AppError('Não autorizado a fazer apostas', 401, ErrorCode.UNAUTHORIZED);
+      }
 
       const { betValue, matchId } = validateRequestBody(updateBetSchema, req.body);
 
@@ -130,6 +133,10 @@ export class BetController extends BaseController {
   updateExtra = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       const user = getAuthenticatedUser(req);
+      if (!user.active) {
+        throw new AppError('Não autorizado a fazer apostas', 401, ErrorCode.UNAUTHORIZED);
+      }
+
       const nowTimestamp = Math.floor(new Date().getTime() / 1000);
       const seasonStart = process.env.SEASON_START;
       const season = process.env.SEASON;
