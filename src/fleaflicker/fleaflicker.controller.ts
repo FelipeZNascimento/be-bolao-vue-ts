@@ -1,8 +1,7 @@
 import { FleaflickerService } from '#fleaflicker/fleaflicker.service.js';
 import { BaseController } from '#shared/base.controller.js';
-import { AppError } from '#utils/appError.js';
-import { ErrorCode } from '#utils/errorCodes.js';
 import { validateRequestBody, validateRequestParams, validateRequestQuery } from '#utils/requestValidation.utils.js';
+import { getAuthenticatedUser } from '#utils/session.utils.js';
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 
@@ -57,10 +56,7 @@ export class FleaflickerController extends BaseController {
 
   setFleaflickerInfo = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      const { user } = req.session;
-      if (!user) {
-        throw new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED);
-      }
+      const user = getAuthenticatedUser(req);
 
       const { leagueId, teamId } = validateRequestBody(setFleaflickerInfoSchema, req.body);
       const response = await this.fleaflickerService.setFleaflickerInfo(user.id, leagueId, teamId);
@@ -75,10 +71,7 @@ export class FleaflickerController extends BaseController {
 
   deleteFleaflickerInfo = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      const { user } = req.session;
-      if (!user) {
-        throw new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED);
-      }
+      const user = getAuthenticatedUser(req);
 
       const response = await this.fleaflickerService.deleteFleaflickerInfo(user.id);
 

@@ -10,6 +10,7 @@ import { getFromCacheOrFetch } from '#team/team.util.js';
 import { AppError } from '#utils/appError.js';
 import { ErrorCode } from '#utils/errorCodes.js';
 import { validateRequestBody, validateRequestParams } from '#utils/requestValidation.utils.js';
+import { getAuthenticatedUser } from '#utils/session.utils.js';
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 
@@ -109,11 +110,10 @@ export class BetController extends BaseController {
 
   update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      if (!req.session.user) {
-        throw new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED);
+      const user = getAuthenticatedUser(req);
+      if (!user.active) {
+        throw new AppError('Não autorizado a fazer apostas', 401, ErrorCode.UNAUTHORIZED);
       }
-
-      const user = req.session.user;
 
       const { betValue, matchId } = validateRequestBody(updateBetSchema, req.body);
 
@@ -132,11 +132,11 @@ export class BetController extends BaseController {
 
   updateExtra = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      if (!req.session.user) {
-        throw new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED);
+      const user = getAuthenticatedUser(req);
+      if (!user.active) {
+        throw new AppError('Não autorizado a fazer apostas', 401, ErrorCode.UNAUTHORIZED);
       }
 
-      const user = req.session.user;
       const nowTimestamp = Math.floor(new Date().getTime() / 1000);
       const seasonStart = process.env.SEASON_START;
       const season = process.env.SEASON;

@@ -9,6 +9,7 @@ import { AppError } from '#utils/appError.js';
 import { cachedInfo } from '#utils/dataCache.js';
 import { ErrorCode } from '#utils/errorCodes.js';
 import { validateRequestBody, validateRequestParams } from '#utils/requestValidation.utils.js';
+import { getAuthenticatedUser } from '#utils/session.utils.js';
 import bcrypt from 'bcrypt';
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
@@ -88,11 +89,7 @@ export class UserController extends BaseController {
 
   getActiveProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      const user = req.session.user;
-
-      if (!user) {
-        return null;
-      }
+      const user = getAuthenticatedUser(req);
 
       const { fleaflickerLeagueId, fleaflickerTeamId, ...userResponse } = await this.userService.getById(user.id);
       const favorites = await this.userService.getFavorites(user.id);
@@ -117,10 +114,7 @@ export class UserController extends BaseController {
         throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
-      const user = req.session.user;
-      if (!user) {
-        throw new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED);
-      }
+      const user = getAuthenticatedUser(req);
 
       const response = await this.userService.registerToCurrentSeason(user.id, season);
       if (!response || response.affectedRows === 0) {
@@ -128,9 +122,7 @@ export class UserController extends BaseController {
       }
 
       console.log('registerToCurrentSeason', season, parseInt(season));
-      console.log(req.session.user);
-      req.session.user = { ...user, active: true, seasonId: parseInt(season) };
-      console.log(req.session.user);
+      req.session.user = { ...user, seasonId: parseInt(season) };
       return response;
     });
   };
@@ -175,11 +167,7 @@ export class UserController extends BaseController {
 
   getFavorites = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      if (!req.session.user) {
-        throw new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED);
-      }
-
-      const user = req.session.user;
+      const user = getAuthenticatedUser(req);
       return await this.userService.getFavorites(user.id);
     });
   };
@@ -342,11 +330,7 @@ export class UserController extends BaseController {
 
   updateFavorites = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      if (!req.session.user) {
-        throw new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED);
-      }
-
-      const user = req.session.user;
+      const user = getAuthenticatedUser(req);
       const { favorites } = validateRequestBody(updateFavoritesSchema, req.body);
 
       await this.userService.updateFavorites(user.id, favorites);
@@ -356,11 +340,7 @@ export class UserController extends BaseController {
 
   updatePassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      if (!req.session.user) {
-        throw new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED);
-      }
-
-      const user = req.session.user;
+      const user = getAuthenticatedUser(req);
       const { currentPassword, newPassword } = validateRequestBody(updatePasswordSchema, req.body);
 
       const updatePasswordResponse = await this.userService.updatePassword(currentPassword, newPassword, user.id);
@@ -390,11 +370,7 @@ export class UserController extends BaseController {
 
   updatePreferences = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      if (!req.session.user) {
-        throw new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED);
-      }
-
-      const user = req.session.user;
+      const user = getAuthenticatedUser(req);
 
       const { color, icon } = validateRequestBody(updatePreferencesSchema, req.body);
       await this.userService.setIcons(user.id, color, icon);
@@ -414,11 +390,7 @@ export class UserController extends BaseController {
 
   updateProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
-      if (!req.session.user) {
-        throw new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED);
-      }
-
-      const user = req.session.user;
+      const user = getAuthenticatedUser(req);
 
       const { email, name, username } = validateRequestBody(updateProfileSchema, req.body);
 
