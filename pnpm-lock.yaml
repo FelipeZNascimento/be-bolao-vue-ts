@@ -30,8 +30,8 @@ importers:
         specifier: ^5.1.2
         version: 5.1.2
       nodemailer:
-        specifier: ^9.0.5
-        version: 9.0.5
+        specifier: ^10.0.0
+        version: 10.0.0
       websocket-express:
         specifier: ^4.0.1
         version: 4.1.0(@types/express@5.0.6)(@types/ws@8.18.1)(express@5.2.1(supports-color@7.2.0))(ws@8.21.3)
@@ -1614,9 +1614,9 @@ packages:
     resolution: {integrity: sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==}
     hasBin: true
 
-  nodemailer@9.0.5:
-    resolution: {integrity: sha512-wvjiKvjczmsN7U/8006JOdXubgBk2XFAbioDMbT+sM7cPs0QrhJTa6KBRX7P5REGGkDcLUz/EarWidb8G8C1jQ==}
-    engines: {node: '>=6.0.0'}
+  nodemailer@10.0.0:
+    resolution: {integrity: sha512-wdv+hXBg0iIPIOf108FaZyTxqjQpCvQeAJt9pHHTooPy/y3vQtI9eiImM9AIVKR3e/0FeMA1oueNfBjFJcaK+Q==}
+    engines: {node: '>=20.0.0'}
 
   normalize-package-data@2.5.0:
     resolution: {integrity: sha512-/5CMN3T0R4XTj4DcGaexo+roZSdSFW/0AOOTROrjxzCG1wrWXEsGbRKevjlIL+ZDE4sZlJr5ED4YW0yqmkK+eA==}
@@ -3554,7 +3554,7 @@ snapshots:
 
   node-gyp-build@4.8.4: {}
 
-  nodemailer@9.0.5: {}
+  nodemailer@10.0.0: {}
 
   normalize-package-data@2.5.0:
     dependencies:
