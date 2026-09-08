@@ -1,6 +1,7 @@
 import { BetController } from '#bet/bet.controller.js';
 import { BetService } from '#bet/bet.service.js';
 import { MatchService } from '#match/match.service.js';
+import { requireAuth } from '#middlewares/middlewares.js';
 import { TeamService } from '#team/team.service.js';
 import express from 'express';
 
@@ -10,8 +11,8 @@ const betService = new BetService();
 const teamService = new TeamService();
 const betController = new BetController(betService, matchService, teamService);
 
-router.post('/update/extra', betController.updateExtra);
-router.post('/update', betController.update);
+router.post('/update/extra', requireAuth, betController.updateExtra);
+router.post('/update', requireAuth, betController.update);
 router.get('/extra/results', betController.getExtrasResults);
 router.get('/extra', betController.getExtras);
 

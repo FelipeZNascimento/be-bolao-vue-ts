@@ -1,5 +1,6 @@
 import { FleaflickerController } from '#fleaflicker/fleaflicker.controller.js';
 import { FleaflickerService } from '#fleaflicker/fleaflicker.service.js';
+import { requireAuth } from '#middlewares/middlewares.js';
 import express from 'express';
 
 const router = express.Router();
@@ -9,7 +10,7 @@ const fleaflickerController = new FleaflickerController(fleaflickerService);
 router.get('/roster/:leagueId/:teamId', fleaflickerController.getRoster);
 router.get('/standings/:leagueId', fleaflickerController.getStandings);
 router.get('/boxscore/:leagueId', fleaflickerController.getBoxscore);
-router.post('/info', fleaflickerController.setFleaflickerInfo);
-router.delete('/info', fleaflickerController.deleteFleaflickerInfo);
+router.post('/info', requireAuth, fleaflickerController.setFleaflickerInfo);
+router.delete('/info', requireAuth, fleaflickerController.deleteFleaflickerInfo);
 
 export default router;

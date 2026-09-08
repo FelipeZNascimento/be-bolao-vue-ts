@@ -31,6 +31,14 @@ export const updateLastOnline: RequestHandler = (req, _res, next) => {
   next();
 };
 
+export const requireAuth: RequestHandler = (req, _res, next) => {
+  if (!req.session.user) {
+    next(new AppError('Sem sessão ativa', 401, ErrorCode.UNAUTHORIZED));
+    return;
+  }
+  next();
+};
+
 export const cache = (options: CacheOptions = {}) => {
   const duration = options.duration ?? 300; // 5 minutes default
 
