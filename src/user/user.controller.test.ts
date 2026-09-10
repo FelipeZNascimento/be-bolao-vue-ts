@@ -46,6 +46,14 @@ vi.mock('#user/user.service.js', () => ({ UserService: vi.fn(() => mockUserServi
 vi.mock('#mailer/mailer.service.js', () => ({ MailerService: vi.fn(() => mockMailerService) }));
 
 vi.mock('#utils/dataCache.js', () => ({
+  CACHE_KEYS: {
+    CURRENT_WEEK: 'CURRENT_WEEK',
+    MATCH_DETAILS: 'MATCH_DETAILS',
+    PASSWORD_RESET: 'PASSWORD_RESET',
+    TEAMS: 'TEAMS',
+    USER_RECORDS: 'USER_RECORDS',
+    WEEKLY_RANKING: 'WEEKLY_RANKING'
+  },
   cachedInfo: mockCachedInfo
 }));
 
