@@ -1,3 +1,4 @@
+import adminRoutes from '#admin/admin.routes.js';
 import betRoutes from '#bet/bet.routes.js';
 import config from '#database/config.js';
 import { connection } from '#database/db.js';
@@ -84,6 +85,7 @@ app.use('/bolaonflv2/user', userRoutes);
 app.use('/bolaonflv2/match', matchRoutes);
 app.use('/bolaonflv2/team', cache(), teamRoutes);
 app.use('/bolaonflv2/fleaflicker', fleaflickerRoutes);
+app.use('/bolaonflv2/admin', adminRoutes);
 
 app.get('/', [middleware]);
 

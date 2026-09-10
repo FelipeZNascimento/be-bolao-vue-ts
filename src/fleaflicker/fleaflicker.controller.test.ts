@@ -8,7 +8,8 @@ import { FleaflickerController } from './fleaflicker.controller';
 
 const mockFleaflickerService = {
   deleteFleaflickerInfo: vi.fn(),
-  getBoxscore: vi.fn(),
+  getLeagueBoxscore: vi.fn(),
+  getLeagueScoreboard: vi.fn(),
   getRoster: vi.fn(),
   getStandings: vi.fn(),
   setFleaflickerInfo: vi.fn()
@@ -63,14 +64,27 @@ describe('FleaflickerController', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('getBoxscore: fetches boxscore with leagueId and scoringPeriod', async () => {
-    mockFleaflickerService.getBoxscore.mockResolvedValue({});
+  it('getBoxscore: fetches scoreboard with leagueId and scoringPeriod when gameId is absent', async () => {
+    mockFleaflickerService.getLeagueScoreboard.mockResolvedValue({});
     const { next, req, res } = getMockReqResSession();
     req.params = { leagueId: '1' };
     req.query = { scoringPeriod: '3' };
 
     await controller.getBoxscore(req, res, next);
-    expect(mockFleaflickerService.getBoxscore).toHaveBeenCalledWith('1', '3');
+    expect(mockFleaflickerService.getLeagueScoreboard).toHaveBeenCalledWith('1', '3');
+    expect(mockFleaflickerService.getLeagueBoxscore).not.toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('getBoxscore: fetches boxscore with leagueId and gameId when gameId is present', async () => {
+    mockFleaflickerService.getLeagueBoxscore.mockResolvedValue({});
+    const { next, req, res } = getMockReqResSession();
+    req.params = { leagueId: '1' };
+    req.query = { gameId: '99', scoringPeriod: '3' };
+
+    await controller.getBoxscore(req, res, next);
+    expect(mockFleaflickerService.getLeagueBoxscore).toHaveBeenCalledWith('1', '99');
+    expect(mockFleaflickerService.getLeagueScoreboard).not.toHaveBeenCalled();
     expect(next).not.toHaveBeenCalled();
   });
 

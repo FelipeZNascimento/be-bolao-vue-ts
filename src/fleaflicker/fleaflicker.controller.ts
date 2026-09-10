@@ -24,6 +24,7 @@ const getBoxscoreParamsSchema = z.object({
 });
 
 const getBoxscoreQuerySchema = z.object({
+  gameId: z.string().optional(),
   scoringPeriod: z.string().optional()
 });
 
@@ -42,8 +43,13 @@ export class FleaflickerController extends BaseController {
   getBoxscore = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     await this.handleRequest(req, res, next, async () => {
       const { leagueId } = validateRequestParams(getBoxscoreParamsSchema, req.params);
-      const { scoringPeriod } = validateRequestQuery(getBoxscoreQuerySchema, req.query);
-      return await this.fleaflickerService.getBoxscore(leagueId, scoringPeriod);
+      const { gameId, scoringPeriod } = validateRequestQuery(getBoxscoreQuerySchema, req.query);
+
+      if (gameId) {
+        return await this.fleaflickerService.getLeagueBoxscore(leagueId, gameId);
+      }
+
+      return await this.fleaflickerService.getLeagueScoreboard(leagueId, scoringPeriod);
     });
   };
 
