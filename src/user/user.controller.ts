@@ -6,7 +6,7 @@ import { UserService } from '#user/user.service.js';
 import { checkExistingEntries, generateVerificationToken, validateEmail } from '#user/user.utils.js';
 import { isRejected } from '#utils/apiResponse.js';
 import { AppError } from '#utils/appError.js';
-import { cachedInfo } from '#utils/dataCache.js';
+import { CACHE_KEYS, cachedInfo } from '#utils/dataCache.js';
 import { ErrorCode } from '#utils/errorCodes.js';
 import { validateRequestBody, validateRequestParams } from '#utils/requestValidation.utils.js';
 import { getAuthenticatedUser } from '#utils/session.utils.js';
@@ -81,7 +81,7 @@ export class UserController extends BaseController {
       const { email } = validateRequestBody(forgotPasswordSchema, req.body);
 
       const resetToken = generateVerificationToken();
-      cachedInfo.set(`PASSWORD_RESET_${email}`, resetToken, 60 * 60); // 60 minutes expiration
+      cachedInfo.set(`${CACHE_KEYS.PASSWORD_RESET}_${email}`, resetToken, 60 * 60); // 60 minutes expiration
 
       await this.mailerService.sendPasswordResetEmail(email, '', resetToken);
     });
@@ -179,7 +179,7 @@ export class UserController extends BaseController {
         throw new AppError('Campo obrigatório ausente', 400, ErrorCode.MISSING_REQUIRED_FIELD);
       }
 
-      const cacheKey = `USER_RECORDS_${userId}`;
+      const cacheKey = `${CACHE_KEYS.USER_RECORDS}_${userId}`;
       const cachedRecords = cachedInfo.get(cacheKey);
       if (cachedRecords) {
         return cachedRecords;
